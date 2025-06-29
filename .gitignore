@@ -76,3 +76,5 @@ temp/
 
 # Claude Code files
 CLAUDE.md
+rename_package.py
+rename_simple.py
