@@ -1,0 +1,124 @@
+[build-system]
+requires = ['setuptools>=40.8.0']
+build-backend = 'setuptools.build_meta'
+
+[tool.setuptools.packages.find]
+where = ["."]
+
+[project]
+name = "l2gx"
+version = "0.1.0"
+authors = [
+  { name="Martin Lotz", email="martin.lotz@warwick.ac.uk" }
+]
+description = "Infer global embeddings from local graph embeddings trained in parallel"
+readme = "README.md"
+requires-python = ">=3.10"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: BSD 3-Clause License",
+    "Operating System :: OS Independent",
+]
+
+dependencies = [
+    "autograd ~= 1.7",
+    "geotorch",
+    "ilupp == 1.0.*",
+    "networkx>=2.0",
+    "numba",
+    "numpy",
+    "polars",
+    "pymanopt ~= 2.2",
+    "pymetis",
+    "python-louvain == 0.16", # imported as 'community'
+    "raphtory",
+    "scikit-learn",
+    "scipy",
+    "seaborn>=0.13.2",
+    "torch>=2.5",
+    "torch-geometric>=2.6",
+    "tqdm >= 4",
+    "umap-learn",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest >= 8",
+    "pytest-cov",
+    "pytest-xdist",
+    "pylint",
+]
+docs = [
+    "Sphinx == 8.*",
+    "sphinx-markdown-builder==0.6.*",
+    "myst-parser >= 4",
+    "pydata-sphinx-theme"
+]
+
+[project.urls]
+"Homepage" = "https://github.com/OxfordRSE/L2GX"
+"Bug Tracker" = "https://github.com/OxfordRSE/L2GX/issues"
+
+[tool.ruff]
+exclude = ["examples"]
+
+# pylint
+# ######
+[tool.pylint.'MASTER']
+ignore = ["docs/*"]
+
+[tool.pylint.'MESSAGES CONTROL']
+notes = "TODO"
+disable = [
+    "fixme",
+    "import-error",
+    "duplicate-code",
+
+    # handled by ruff and ruff-format
+    "line-too-long",
+    "trailing-whitespace",
+    "trailing-newlines",
+    "unused-import",
+    "missing-final-newline",
+
+    # style issues
+    "wrong-import-order",
+    "invalid-name",  # matrix names are single caps, like X, Y ...
+    "logging-fstring-interpolation",
+
+    # code complexity
+    "too-many-arguments",
+    "too-many-positional-arguments",
+    "too-many-locals",
+    "too-many-branches",
+    "too-many-statements",
+
+    # documentation
+    "missing-function-docstring",
+    "missing-module-docstring",
+
+    # network timeouts
+    "missing-timeout",
+
+    # Abstract methods should be instantiated in derived classes
+    # See https://github.com/OxfordRSE/L2GX/issues/45
+    "abstract-method",
+]
+
+# pyright
+# #######
+[tool.pyright]
+include = ["l2gx"]
+exclude = []
+ignore = []
+defineConstant = { DEBUG = true }
+
+reportMissingImports = false
+reportAttributeAccessIssue = false
+reportOptionalMemberAccess = false
+reportOptionalSubscript = false
+reportGeneralTypeIssues = false
+reportMissingTypeStubs = false
+
+[tool.coverage.run]
+omit = ["tests/*"]

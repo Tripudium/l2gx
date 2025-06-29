@@ -1,0 +1,31 @@
+name: tests
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/tests.yml'
+      - 'l2gv2/**/*.py'
+      - 'tests/**/*.py'
+      - 'pyproject.toml'
+      - 'uv.lock'
+  pull_request:
+    paths:
+      - '.github/workflows/tests.yml'
+      - 'l2gv2/**/*.py'
+      - 'tests/**/*.py'
+      - 'pyproject.toml'
+      - 'uv.lock'
+jobs:
+  ci:
+    runs-on: ubuntu-22.04
+    steps:
+    - name: Check out code
+      uses: actions/checkout@v4
+    - name: Set up Python 3.10
+      uses: actions/setup-python@v5
+      with:
+        python-version: "3.10"
+    - uses: astral-sh/setup-uv@v5
+    - name: Lint and test
+      run: uvx nox
