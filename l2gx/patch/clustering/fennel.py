@@ -4,6 +4,7 @@ Fennel clustering implementation without tqdm progress bars to avoid Numba issue
 
 import numpy as np
 import numba
+from l2gx.graphs import TGraph
 
 
 @numba.njit
@@ -95,23 +96,19 @@ def _fennel_clustering(
 
 
 def fennel_clustering(
-    edge_index: np.ndarray,
-    adj_index: np.ndarray, 
-    num_nodes: int,
-    num_clusters: int,
-    load_limit: float = 1.1,
-    alpha: float = None,
-    gamma: float = 1.5,
-    num_iters: int = 1,
-    verbose: bool = True
-) -> np.ndarray:
+        graph: TGraph,
+        num_clusters: int,
+        load_limit: float = 1.1,
+        alpha: float = None,
+        gamma: float = 1.5,
+        num_iters: int = 1,
+        verbose: bool = True
+    ) -> np.ndarray:
     """
-    Safe wrapper for Fennel clustering that handles progress reporting.
+    Wrapper for Fennel clustering that handles progress reporting.
     
     Args:
-        edge_index: Edge index array [2, num_edges]
-        adj_index: Adjacency index for fast neighbor lookup
-        num_nodes: Number of nodes in the graph
+        graph: Input graph (TGraph object)
         num_clusters: Target number of clusters
         load_limit: Maximum cluster size factor (default: 1.1)
         alpha: Alpha parameter (computed automatically if None)
@@ -122,6 +119,10 @@ def fennel_clustering(
     Returns:
         Cluster assignment array
     """
+    edge_index = graph.edge_index.cpu().numpy()
+    adj_index = graph.adj_index.cpu().numpy()
+    num_nodes = graph.num_nodes
+
     if verbose:
         print(f"Starting Fennel clustering: {num_nodes} nodes → {num_clusters} clusters")
     

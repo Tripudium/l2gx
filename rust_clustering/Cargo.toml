@@ -8,14 +8,10 @@ name = "l2g_clustering"
 crate-type = ["cdylib"]
 
 [dependencies]
-pyo3 = { version = "0.20", features = ["extension-module"] }
+pyo3 = { version = "0.20", features = ["extension-module", "abi3-py38"] }
 numpy = "0.20"
 rayon = "1.8"
 ndarray = "0.15"
-
-[dependencies.pyo3]
-version = "0.20"
-features = ["extension-module", "abi3-py38"]
 
 [profile.release]
 lto = true

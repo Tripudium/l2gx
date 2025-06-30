@@ -7,13 +7,12 @@ combining clustering, sparsification, and patch creation into easy-to-use interf
 
 import numpy as np
 import torch
-from typing import Union, Optional, Dict, Any, List, Tuple, Callable
+from typing import Optional, Dict, Any, List, Tuple
 
 from l2gx.graphs import TGraph
 from l2gx.patch.patches import create_patch_data, Patch
 from l2gx.patch.clustering import (
-    fennel_clustering, louvain_clustering, metis_clustering, 
-    spread_clustering, get_clustering_algorithm, CLUSTERING_ALGORITHMS
+    get_clustering_algorithm, CLUSTERING_ALGORITHMS
 )
 
 # Try to import Rust implementations if available
@@ -28,11 +27,10 @@ def generate_patches(
     graph: TGraph,
     patch_size: Optional[int] = None,
     num_patches: Optional[int] = None,
-    clustering_method: str = "fennel",
+    clustering_method: str = "metis",
     min_overlap: Optional[int] = None,
     target_overlap: Optional[int] = None,
     sparsify_method: str = "resistance",
-    use_rust: bool = True,
     clustering_params: Optional[Dict[str, Any]] = None,
     verbose: bool = True
 ) -> Tuple[List[Patch], torch.Tensor]:
@@ -52,7 +50,6 @@ def generate_patches(
         target_overlap: Target overlap between patches (default: computed from patch_size)
         sparsify_method: Graph sparsification method
             Options: 'resistance', 'rmst', 'none', 'edge_sampling', 'knn'
-        use_rust: Use Rust implementation if available (default: True)
         clustering_params: Additional parameters for clustering algorithm
         verbose: Print progress information
         
@@ -124,7 +121,7 @@ def generate_patches(
         print(f"Step 1: Clustering with {clustering_method}...")
     
     clusters = run_clustering(
-        graph, num_patches, clustering_method, use_rust, clustering_params
+        graph, num_patches, clustering_method, clustering_params
     )
     
     if verbose:

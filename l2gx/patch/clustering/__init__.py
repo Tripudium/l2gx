@@ -45,7 +45,7 @@ from .hierarchical import (
 
 # Import Rust implementations if available
 try:
-    from .rust_fennel import (
+    from .fennel_rust import (
         fennel_clustering_rust,
         fennel_clustering_from_edge_list_rust,
         is_rust_available,

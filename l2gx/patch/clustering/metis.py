@@ -122,7 +122,7 @@ def metis_clustering_with_stats(graph: TGraph, num_clusters: int, verbose=True):
         imbalance = max_size / avg_size
         
         if verbose:
-            print(f"METIS clustering results:")
+            print("METIS clustering results:")
             print(f"  Clusters: {num_clusters}")
             print(f"  Edge cuts: {edge_cuts}")
             print(f"  Cluster sizes: {cluster_sizes.tolist()}")

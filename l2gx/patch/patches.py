@@ -513,9 +513,13 @@ def create_patch_data(
     if verbose:
         print(f"average patch degree: {pg.num_edges / pg.num_nodes}")
 
-    patches = create_overlapping_patches(
+    patch_arrays = create_overlapping_patches(
         graph, partition_tensor_0, pg, min_overlap, target_overlap
     )
+    
+    # Convert numpy arrays to Patch objects
+    patches = [Patch(patch_nodes) for patch_nodes in patch_arrays]
+    
     return patches, pg
 
 

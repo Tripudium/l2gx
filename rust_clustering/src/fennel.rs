@@ -136,8 +136,9 @@ fn fennel_clustering_core(
             
             // Count neighbors in each cluster
             let mut neighbor_counts = vec![0i64; num_clusters];
-            for &neighbor_idx in &edge_index[start_idx..end_idx] {
-                let neighbor = neighbor_idx as usize;
+            for edge_idx in start_idx..end_idx {
+                // edge_index is flattened [2, num_edges] array, so we access the target nodes
+                let neighbor = edge_index[num_edges + edge_idx] as usize;
                 if neighbor < num_nodes {
                     let neighbor_cluster = clusters[neighbor];
                     if neighbor_cluster >= 0 {
@@ -173,7 +174,7 @@ fn fennel_clustering_core(
             partition_sizes[best_cluster] += 1;
             
             // Update delta for the chosen cluster
-            if partition_sizes[best_cluster] >= load_limit {
+            if partition_sizes[best_cluster] == load_limit {
                 deltas[best_cluster] = f64::NEG_INFINITY;
             } else {
                 deltas[best_cluster] = -alpha * gamma * 
@@ -238,7 +239,7 @@ fn fennel_clustering_parallel_core(
     {
         let mut deltas_guard = deltas.lock().unwrap();
         for i in 0..num_clusters {
-            deltas_guard[i] = -alpha * gamma * 0.0f64.powf(gamma - 1.0);
+            deltas_guard[i] = -alpha * gamma * (partition_sizes[i].load(Ordering::Relaxed) as f64).powf(gamma - 1.0);
         }
     }
     
@@ -260,8 +261,9 @@ fn fennel_clustering_parallel_core(
                     
                     // Count neighbors in each cluster
                     let mut neighbor_counts = vec![0i64; num_clusters];
-                    for &neighbor_idx in &edge_index[start_idx..end_idx] {
-                        let neighbor = neighbor_idx as usize;
+                    for edge_idx in start_idx..end_idx {
+                        // edge_index is flattened [2, num_edges] array, so we access the target nodes
+                        let neighbor = edge_index[num_edges + edge_idx] as usize;
                         if neighbor < num_nodes {
                             let neighbor_cluster = clusters[neighbor].load(Ordering::Relaxed);
                             if neighbor_cluster >= 0 {
@@ -302,7 +304,7 @@ fn fennel_clustering_parallel_core(
                     // Update delta for the chosen cluster
                     {
                         let mut deltas_guard = deltas.lock().unwrap();
-                        if new_size >= load_limit {
+                        if new_size == load_limit {
                             deltas_guard[best_cluster] = f64::NEG_INFINITY;
                         } else {
                             deltas_guard[best_cluster] = -alpha * gamma * 
