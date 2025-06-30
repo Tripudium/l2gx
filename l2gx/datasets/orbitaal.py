@@ -21,7 +21,6 @@ Reference:
 """
 
 import zipfile
-import pandas as pd
 import polars as pl
 from pathlib import Path
 from typing import Optional, Callable
@@ -139,7 +138,7 @@ class ORBITAALDataset(BaseDataset):
                     with open(file_path, 'w') as f:
                         f.write(f"# ORBITAAL {name.title()} Data\n")
                         f.write(f"# Download manually from: {url}\n")
-                        f.write(f"# This is a placeholder file.\n")
+                        f.write("# This is a placeholder file.\n")
         
         else:
             # Full dataset requires manual download

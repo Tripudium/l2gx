@@ -3,7 +3,7 @@
 [![Pylint](https://github.com/lotzma/L2GX/actions/workflows/pylint.yml/badge.svg)](https://github.com/lotzma/L2GX/actions/workflows/pylint.yml)
 [![pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit)](https://github.com/pre-commit/pre-commit)
 
-# l2gv2 - Local2Global
+# L2GX - Local2Global Expanded
 
 ## Overview
 
@@ -19,7 +19,7 @@ Full documentation available [here](https://l2gx.readthedocs.io/en/latest/)
 **Clone the repository** on your machine
 
 ```shell
-git clone https://github.com/OxfordRSE/L2GX.git
+git clone https://github.com/Tripudium/L2GX.git
 ```
 
 We use [`uv`](https://docs.astral.sh/uv/) for Python package management. You

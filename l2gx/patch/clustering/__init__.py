@@ -33,7 +33,7 @@ algorithm modules.
 """
 
 # Import all clustering algorithms for backward compatibility
-from .fennel import fennel_clustering, fennel_clustering_safe
+from .fennel import fennel_clustering
 from .louvain import louvain_clustering, louvain_clustering_with_stats, louvain_clustering_multi_resolution
 from .metis import metis_clustering, metis_clustering_with_stats, metis_clustering_weighted
 from .spread import spread_clustering, spread_clustering_with_stats, spread_clustering_balanced
@@ -77,7 +77,7 @@ from .utils import (
 
 # Import the no-tqdm version for compatibility
 try:
-    from .fennel_no_tqdm import fennel_clustering_no_progress
+    from .fennel import fennel_clustering_no_progress
 except ImportError:
     # Fallback if file doesn't exist
     pass

@@ -41,7 +41,6 @@ from .clustering import (
     louvain_clustering,
     metis_clustering,
     spread_clustering,
-    hierarchical_aglomerative_clustering,
 )
 
 # Sparsification methods

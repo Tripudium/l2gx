@@ -4,13 +4,6 @@ Rust-based Fennel Clustering Implementation
 This module provides Python bindings for high-performance Fennel clustering
 algorithms implemented in Rust. The Rust implementation offers significant
 speedups over the Python/Numba version while maintaining identical functionality.
-
-Performance Benefits:
-- 3-10x faster than Numba implementation
-- No JIT compilation overhead
-- Better memory efficiency
-- Parallel processing support
-- Eliminates tqdm/Numba compatibility issues
 """
 
 import numpy as np

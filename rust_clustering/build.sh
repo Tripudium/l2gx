@@ -98,7 +98,7 @@ if maturin develop --release; then
         echo "🚀 Installation verified! The Rust clustering extension is ready to use."
         echo ""
         echo "Quick test:"
-        echo "  python -c \"from l2gv2.patch.clustering import is_rust_available; print(f'Rust available: {is_rust_available()}')\""
+        echo "  python -c \"from l2gx.patch.clustering import is_rust_available; print(f'Rust available: {is_rust_available()}')\""
         echo ""
         echo "Benchmarking:"
         echo "  python ../../scripts/benchmark_clustering.py --nodes 1000 --clusters 10"

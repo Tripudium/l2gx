@@ -47,7 +47,7 @@ def polars_to_tg(
         # Process edges
         edges_filtered = edge_df.filter(pl.col("timestamp") == ts).select(
             ["src", "dst"]
-        )
+        ).sort("src")  # Sort by source column for adjacency index efficiency
         edge_array = edges_filtered.to_numpy()
         if edge_array.size == 0:
             continue

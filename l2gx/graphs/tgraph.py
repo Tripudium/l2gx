@@ -31,7 +31,9 @@ from l2gx.graphs.graph import Graph
 
 # pylint: disable=too-many-instance-attributes
 class TGraph(Graph):
-    """Wrapper class for pytorch-geometric edge_index providing fast adjacency look-up."""
+    """
+    Wrapper class for pytorch-geometric edge_index providing fast adjacency look-up.
+    """
 
     @staticmethod
     def _convert_input(inp):

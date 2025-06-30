@@ -10,7 +10,6 @@ import time
 import numpy as np
 import torch
 import matplotlib.pyplot as plt
-import seaborn as sns
 from pathlib import Path
 import argparse
 import sys
@@ -18,52 +17,13 @@ import sys
 # Add L2G to path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from l2gv2.graphs import TGraph
-from l2gv2.patch.clustering.fennel import fennel_clustering_safe
-from l2gv2.patch.clustering.rust_fennel import (
+from l2gx.patch.clustering.fennel import fennel_clustering_safe
+from l2gx.patch.clustering.rust_fennel import (
     fennel_clustering_rust, 
-    is_rust_available,
-    benchmark_rust_vs_python
+    is_rust_available
 )
+from test_graph_utils import generate_hidden_partition_model
 
-
-def generate_test_graph(num_nodes: int, avg_degree: int = 10, seed: int = 42) -> TGraph:
-    """Generate a random test graph with specified properties"""
-    np.random.seed(seed)
-    torch.manual_seed(seed)
-    
-    # Generate random edges
-    num_edges = (num_nodes * avg_degree) // 2
-    
-    # Create edges with some structure (not completely random)
-    edges = []
-    
-    # Add some structured clusters
-    cluster_size = num_nodes // 10
-    for cluster_start in range(0, num_nodes, cluster_size):
-        cluster_end = min(cluster_start + cluster_size, num_nodes)
-        
-        # Dense connections within cluster
-        for i in range(cluster_start, cluster_end):
-            for j in range(i + 1, min(i + avg_degree // 2, cluster_end)):
-                if np.random.random() < 0.7:  # 70% chance of edge within cluster
-                    edges.append([i, j])
-    
-    # Add some random inter-cluster edges
-    for _ in range(num_edges // 3):
-        i = np.random.randint(0, num_nodes)
-        j = np.random.randint(0, num_nodes)
-        if i != j:
-            edges.append([i, j])
-    
-    # Remove duplicates and convert to tensor
-    edges = list(set(tuple(sorted(edge)) for edge in edges))
-    edge_index = torch.tensor(edges, dtype=torch.long).t()
-    
-    # Make undirected
-    edge_index = torch.cat([edge_index, edge_index.flip(0)], dim=1)
-    
-    return TGraph(edge_index, num_nodes=num_nodes)
 
 
 def benchmark_single_size(num_nodes: int, num_clusters: int, num_runs: int = 3) -> dict:
@@ -71,7 +31,7 @@ def benchmark_single_size(num_nodes: int, num_clusters: int, num_runs: int = 3) 
     print(f"\nBenchmarking {num_nodes} nodes, {num_clusters} clusters...")
     
     # Generate test graph
-    graph = generate_test_graph(num_nodes)
+    graph, cluster_assignments = generate_hidden_partition_model(num_nodes, num_clusters, 0.8, 0.5)
     print(f"Generated graph: {graph.num_nodes} nodes, {graph.num_edges} edges")
     
     results = {
