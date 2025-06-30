@@ -22,7 +22,6 @@ import numpy as np
 import scipy as sp
 import scipy.sparse as ss
 from scipy.sparse.linalg import lsmr
-from typing import Callable, Any
 
 from l2gx.patch import Patch
 from l2gx.align.registry import register_aligner
@@ -166,7 +165,7 @@ class L2GAlignmentProblem(AlignmentProblem):
             # TODO: probably doesn't need to be that accurate, this is for testing
         return translations
 
-    def align_patches(self, patches: list[Patch], min_overlap: int | None = None, scale=False):
+    def align_patches(self, patches: list[Patch], min_overlap: int | None = None, scale: bool = True):
         self._register_patches(patches, min_overlap)
         if scale:
             self.scale_patches()

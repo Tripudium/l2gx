@@ -2,6 +2,7 @@
 Utils for alignment
 """
 
+import numpy as np
 import torch
 
 
@@ -51,3 +52,24 @@ def get_intersections(patches, min_overlap=0):
                 ]
     # embeddings = list(itertools.chain.from_iterable(embeddings))
     return intersections, embeddings
+
+
+def relative_scale(coordinates1, coordinates2, clamp=1e8):
+    """
+    compute relative scale of two sets of coordinates for the same nodes
+
+    Args:
+        coordinates1: First set of coordinates (array-like)
+        coordinates2: Second set of coordinates (array-like)
+
+    Note that the two sets of coordinates need to have the same shape.
+    """
+    scale1 = np.linalg.norm(coordinates1 - np.mean(coordinates1, axis=0))
+    scale2 = np.linalg.norm(coordinates2 - np.mean(coordinates2, axis=0))
+    if scale1 > clamp * scale2:
+        print("extremely large scale clamped")
+        return clamp
+    if scale1 * clamp < scale2:
+        print("extremely small scale clamped")
+        return 1 / clamp
+    return scale1 / scale2

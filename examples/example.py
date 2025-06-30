@@ -29,9 +29,9 @@ rg = np.random.default_rng()
 def generate_points(
     n_clusters: int,
     scale: float = 1.0,
-    std: float = 0.5,
-    max_size: int = 200,
-    min_size: int = 10,
+    std: float = 0.2,
+    max_size: int = 2000,
+    min_size: int = 128,
     dim: int = 2,
 ) -> np.ndarray:
     """
@@ -335,6 +335,10 @@ def plot_patches(patches, transformed_patches=None):
     ax2.set_title("Transformed Patches")
     ax2.set_xlabel("X Coordinate")
     ax2.set_ylabel("Y Coordinate")
+
+    # Ensure equal aspect ratio for both plots
+    ax1.set_aspect('equal', adjustable='box')
+    ax2.set_aspect('equal', adjustable='box')
 
     plt.tight_layout()
     plt.show()

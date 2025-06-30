@@ -2,7 +2,6 @@
 Base functions and classes for alignment problems.
 """
 
-import scipy as sp
 from copy import copy, deepcopy
 import json
 from typing import Callable, Any
@@ -10,98 +9,17 @@ from typing import Callable, Any
 import numpy as np
 from tqdm.auto import tqdm
 import networkx as nx
-from scipy.spatial import procrustes
 import scipy.sparse as ss
 from collections import defaultdict
 
 # local imports
 from l2gx.patch import Patch
 from l2gx.utils import ensure_extension
+from .utils import relative_scale
 
 # Random number generator for synchronization
 rg = np.random.default_rng()
 
-
-def procrustes_error(coordinates1, coordinates2):
-    """
-    compute the procrustes alignment error between two sets of coordinates
-
-    Args:
-        coordinates1: First set of coordinates (array-like)
-        coordinates2: Second set of coordinates (array-like)
-
-    Note that the two sets of coordinates need to have the same shape.
-    """
-    return procrustes(coordinates1, coordinates2)[2]
-
-
-def local_error(patch: Patch, reference_coordinates):
-    """
-    compute the euclidean distance between patch coordinate and reference
-    coordinate for each node in patch
-
-    Args:
-        patch:
-        reference_coordinates:
-
-    Returns:
-        vector of error values
-    """
-    return np.linalg.norm(
-        reference_coordinates[patch.nodes, :] - patch.coordinates, axis=1
-    )
-
-
-def transform_error(transforms):
-    """
-    Compute the recovery error based on tracked transformations.
-
-    After recovery, all transformations should be constant across patches
-    as we can recover the embedding only up to a global scaling/rotation/translation.
-    The error is computed as the mean over transformation elements of the standard deviation over patches.
-
-    Args:
-        transforms: list of transforms
-    """
-    return np.mean(np.std(transforms, axis=0))
-
-
-def orthogonal_MSE_error(rots1, rots2):
-    """
-    Compute the MSE between two sets of orthogonal transformations up to a global transformation
-
-    Args:
-        rots1: First list of orthogonal matrices
-        rots2: Second list of orthogonal matrices
-
-    """
-    dim = len(rots1[0])
-    rots1 = np.asarray(rots1)
-    rots1 = rots1.transpose((0, 2, 1))
-    rots2 = np.asarray(rots2)
-    combined = np.mean(rots1 @ rots2, axis=0)
-    _, s, _ = sp.linalg.svd(combined)
-    return 2 * (dim - np.sum(s))
-
-def relative_scale(coordinates1, coordinates2, clamp=1e8):
-    """
-    compute relative scale of two sets of coordinates for the same nodes
-
-    Args:
-        coordinates1: First set of coordinates (array-like)
-        coordinates2: Second set of coordinates (array-like)
-
-    Note that the two sets of coordinates need to have the same shape.
-    """
-    scale1 = np.linalg.norm(coordinates1 - np.mean(coordinates1, axis=0))
-    scale2 = np.linalg.norm(coordinates2 - np.mean(coordinates2, axis=0))
-    if scale1 > clamp * scale2:
-        print("extremely large scale clamped")
-        return clamp
-    if scale1 * clamp < scale2:
-        print("extremely small scale clamped")
-        return 1 / clamp
-    return scale1 / scale2
 
 class AlignmentProblem:  # pylint: disable=too-many-instance-attributes
     """
@@ -130,7 +48,7 @@ class AlignmentProblem:  # pylint: disable=too-many-instance-attributes
         patch_overlap (dict): Dictionary mapping patch pairs to overlapping nodes
         min_overlap (int): Minimum required overlap between patches
     """
-    def __init__(self, verbose=False, min_overlap=None):
+    def __init__(self, verbose=False, min_overlap: int | None = None):
         """
         Initialize the alignment problem
 
@@ -357,6 +275,7 @@ class AlignmentProblem:  # pylint: disable=too-many-instance-attributes
                 (data, index, indptr), shape=(dim * n, dim * n), blocksize=(dim, dim)
             )
         return matrix
+    
     def weight(self, i, j):
         """
         Compute the weight for a pair of patches based on their overlap.
