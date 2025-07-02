@@ -1,4 +1,5 @@
 from .geo.geoalign import GeoAlignmentProblem
+from .geo2.geoalign2 import GeoAlignmentProblem2
 from .l2g.local2global import L2GAlignmentProblem
 from .alignment import AlignmentProblem
 from .errors import (
@@ -12,6 +13,7 @@ from .registry import register_aligner, get_aligner
 
 __all__ = [
     "GeoAlignmentProblem",
+    "GeoAlignmentProblem2",
     "L2GAlignmentProblem",
     "AlignmentProblem",
     "procrustes_error",

@@ -49,7 +49,7 @@ def test_orthogonal_regularization():
         num_epochs=200,
         learning_rate=0.01,
         model_type="affine",
-        use_orthogonal_regularization=False,
+        use_orthogonal_reg=False,
         verbose=True
     )
     
@@ -68,8 +68,9 @@ def test_orthogonal_regularization():
         num_epochs=200,
         learning_rate=0.01,
         model_type="affine",
-        use_orthogonal_regularization=True,
-        orthogonal_reg_weight=0.1,
+        use_orthogonal_reg=True,
+        orthogonal_reg_weight=10.0, # Higher regularization weight
+        preserve_scale=False,       # Strict orthogonality: W @ W.T = I
         verbose=True
     )
     

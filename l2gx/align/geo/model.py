@@ -24,7 +24,7 @@ class OrthogonalModel(nn.Module):
         super().__init__()
         self.device = device
         linear_layers = [
-            nn.Linear(dim, dim, bias=False).to(device) for _ in range(n_patches)
+            nn.Linear(dim, dim, bias=True).to(device) for _ in range(n_patches)
         ]
         fixed_layer_index = 0
         linear_layers[fixed_layer_index].weight.data.copy_(torch.eye(dim))
@@ -72,8 +72,8 @@ class AffineModel(nn.Module):
         ]
         # Fix the first transformation to be the identity
         fixed_layer_index = 0
-        linear_layers[fixed_layer_index].weight.data.copy_(torch.eye(dim))
         linear_layers[fixed_layer_index].bias.data.zero_()
+        linear_layers[fixed_layer_index].weight.data.copy_(torch.eye(dim))
         linear_layers[fixed_layer_index].weight.requires_grad = False
         linear_layers[fixed_layer_index].bias.requires_grad = False
 

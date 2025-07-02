@@ -111,9 +111,9 @@ def test_translation_fix():
         learning_rate=0.01,
         model_type="affine",
         use_orthogonal_reg=True,
-        orthogonal_reg_weight=0.1,
-        center_patches=True,   # NEW: Center patches first
-        preserve_scale=True,   # NEW: Allow uniform scaling
+        orthogonal_reg_weight=10.0, # Higher regularization weight  
+        center_patches=True,        # NEW: Center patches first
+        preserve_scale=False,       # Strict orthogonality for better results
         verbose=True
     )
     
