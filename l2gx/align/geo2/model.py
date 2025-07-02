@@ -34,7 +34,22 @@ class GeoModel(nn.Module):
             nn.Linear(dim, dim, bias=use_bias) for _ in range(n_patches)
         ])
         
-        # Fix the first transformation to identity (reference patch)
+        # Initialize all transformations closer to identity to reduce skewing
+        with torch.no_grad():
+            for i, transformation in enumerate(self.transformations):
+                # Initialize weights as identity + small random perturbation
+                W = torch.eye(dim) + 0.01 * torch.randn(dim, dim)
+                
+                # Ensure positive determinant to avoid reflections
+                if torch.det(W) < 0:
+                    # Flip the first column to make determinant positive
+                    W[:, 0] *= -1
+                
+                transformation.weight.copy_(W)
+                if use_bias:
+                    transformation.bias.zero_()
+        
+        # Fix the first transformation to exact identity (reference patch)
         with torch.no_grad():
             self.transformations[0].weight.copy_(torch.eye(dim))
             if use_bias:

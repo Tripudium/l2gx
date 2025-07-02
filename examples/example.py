@@ -322,6 +322,7 @@ def plot_patches(patches, transformed_patches=None):
     ax1.set_title("Original Patches")
     ax1.set_xlabel("X Coordinate")
     ax1.set_ylabel("Y Coordinate")
+    ax1.legend(bbox_to_anchor=(1.05, 1), loc='upper left')
 
     # Plot transformed patches on the right subplot
     for i, patch in enumerate(transformed_patches):
@@ -335,6 +336,7 @@ def plot_patches(patches, transformed_patches=None):
     ax2.set_title("Transformed Patches")
     ax2.set_xlabel("X Coordinate")
     ax2.set_ylabel("Y Coordinate")
+    ax2.legend(bbox_to_anchor=(1.05, 1), loc='upper left')
 
     # Ensure equal aspect ratio for both plots
     ax1.set_aspect('equal', adjustable='box')
