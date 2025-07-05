@@ -13,7 +13,7 @@ from torch_geometric.data import Data, InMemoryDataset
 from torch import Tensor
 from typing import Optional, Callable, Tuple, Dict
 
-from .utils import polars_to_tg, polars_to_raphtory
+from .utils import polars_to_tg, polars_to_raphtory, polars_to_networkx
 
 
 class BaseDataset(InMemoryDataset):
@@ -93,12 +93,19 @@ class BaseDataset(InMemoryDataset):
         data, slices = self.collate(polars_to_tg(edge_df, node_df, self.pre_transform))
         return data, slices
 
+    def _to_networkx(self):
+        """
+        Convert the processed edge and node Polars DataFrames to a NetworkX graph.
+        """
+        edge_df, node_df = self._load_polars()
+        return polars_to_networkx(edge_df, node_df)
+
     def to(self, fmt: str):  # pylint: disable=arguments-renamed
         """
         Convert the dataset to a different format.
         
         Args:
-            fmt: Target format ('raphtory', 'polars', or device string for torch tensors)
+            fmt: Target format ('raphtory', 'polars', 'torch-geometric', 'networkx', or device string for torch tensors)
             
         Returns:
             Dataset in the requested format
@@ -108,6 +115,11 @@ class BaseDataset(InMemoryDataset):
                 return self.raphtory_graph
             case "polars":
                 return self.edge_df, self.node_df
+            case "torch-geometric":
+                data, _ = self._to_torch_geometric()
+                return data
+            case "networkx":
+                return self._to_networkx()
             case _:
                 return super().to(fmt)
 

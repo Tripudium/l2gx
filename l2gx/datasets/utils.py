@@ -10,6 +10,7 @@ from torch import Tensor
 from torch_geometric.data import Data
 from torch_geometric.utils import coalesce
 from raphtory import Graph  # pylint: disable=no-name-in-module
+import networkx as nx
 
 
 def polars_to_tg(
@@ -156,3 +157,45 @@ def tg_to_polars(data_list: List[Data]) -> Tuple[pl.DataFrame, pl.DataFrame]:
     node_df = pl.concat(node_dfs)
 
     return edge_df, node_df
+
+
+def polars_to_networkx(edge_df: pl.DataFrame, node_df: pl.DataFrame = None) -> nx.Graph:
+    """
+    Convert Polars DataFrames to a NetworkX graph.
+    
+    Args:
+        edge_df: DataFrame with columns 'src', 'dst', and optional 'weight' and other edge attributes
+        node_df: Optional DataFrame with node features and attributes
+        
+    Returns:
+        NetworkX Graph object
+    """
+    # Determine if graph should be directed based on edge structure
+    # For simplicity, assume undirected unless specified otherwise
+    G = nx.Graph()
+    
+    # Add nodes
+    if node_df is not None:
+        node_data = node_df.to_pandas()
+        for _, row in node_data.iterrows():
+            node_id = row.get('id', row.name)
+            # Add node attributes (excluding 'id' and 'timestamp')
+            attrs = {k: v for k, v in row.items() if k not in ['id', 'timestamp']}
+            G.add_node(node_id, **attrs)
+    
+    # Add edges
+    edge_data = edge_df.to_pandas()
+    for _, row in edge_data.iterrows():
+        src = row['src']
+        dst = row['dst']
+        
+        # Add edge attributes (excluding 'src', 'dst', 'timestamp')
+        attrs = {k: v for k, v in row.items() if k not in ['src', 'dst', 'timestamp']}
+        
+        # Handle weight specially if present
+        if 'weight' in attrs:
+            G.add_edge(src, dst, weight=attrs['weight'], **{k: v for k, v in attrs.items() if k != 'weight'})
+        else:
+            G.add_edge(src, dst, **attrs)
+    
+    return G
