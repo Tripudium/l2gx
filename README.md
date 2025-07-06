@@ -16,64 +16,190 @@ Full documentation available [here](https://l2gx.readthedocs.io/en/latest/)
 **Supported Python Versions**: 3.10, 3.11, 3.12  
 **Supported Operating Systems**: macOS, Linux
 
-**Clone the repository** on your machine
+### Quick Start with uv
+
+We use [`uv`](https://docs.astral.sh/uv/) for fast Python package management. Follow these steps to get started:
+
+#### 1. Install uv
+
+**macOS/Linux with Homebrew:**
+```shell
+brew install uv
+```
+
+**macOS/Linux with curl:**
+```shell
+curl -LsSf https://astral.sh/uv/install.sh | sh
+```
+
+**Windows:**
+```shell
+powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
+```
+
+#### 2. Clone and Setup
+
+```shell
+# Clone the repository
+git clone https://github.com/Tripudium/L2GX.git
+cd L2GX
+
+# Install dependencies and create virtual environment
+uv sync --dev
+
+# Activate the virtual environment
+source .venv/bin/activate  # Linux/macOS
+# or
+.venv\Scripts\activate     # Windows
+```
+
+#### 3. Verify Installation
+
+```shell
+# Test that everything works
+uv run python -c "import l2gx; print('L2GX installed successfully!')"
+
+# Run a quick test
+uv run pytest tests/ -x
+```
+
+### uv Commands Reference
+
+```shell
+# Install all dependencies (including dev)
+uv sync --dev
+
+# Install only production dependencies
+uv sync
+
+# Add a new dependency
+uv add numpy
+
+# Add a development dependency
+uv add --dev pytest
+
+# Run a command in the virtual environment
+uv run python script.py
+uv run pytest
+uv run jupyter notebook
+
+# Update dependencies
+uv sync --upgrade
+
+# Remove the virtual environment
+rm -rf .venv
+```
+
+### Alternative Setup (Traditional pip)
+
+If you prefer not to use uv:
 
 ```shell
 git clone https://github.com/Tripudium/L2GX.git
+cd L2GX
+python -m venv venv
+source venv/bin/activate  # Linux/macOS
+pip install -e ".[dev]"
 ```
 
-We use [`uv`](https://docs.astral.sh/uv/) for Python package management. You
-can install it on macOS or Linux using `brew install uv`. Alternatively, you
-can use uv's [installation script](https://docs.astral.sh/uv/#installation).
+## Testing and Development
 
-[nox](https://nox.thea.codes) simplifies Python testing, particularly across
-multiple Python versions. We provide a [noxfile.py](noxfile.py), which allows you
-to run tests and perform linting with one command. You'll first need
-to install nox:
+### Quick Testing with uv
 
 ```shell
+# Run tests
+uv run pytest
+
+# Run tests with coverage
+uv run pytest --cov
+
+# Run specific test file
+uv run pytest tests/test_specific.py
+
+# Run linting
+uv run ruff check
+uv run ruff format
+
+# Execute example notebooks
+uv run jupyter execute examples/demo.ipynb
+```
+
+### Advanced Testing with nox
+
+[nox](https://nox.thea.codes) simplifies Python testing across multiple Python versions. Install nox:
+
+```shell
+# Recommended: Install with uv
+uv tool install nox
+
+# Alternatives
 brew install nox      # macOS
 pipx install nox      # with pipx
 sudo apt install nox  # debian
 sudo dnf install nox  # fedora
-uv tool install nox   # with uv
 ```
 
-To run the tests and linting with
-[pylint](https://pylint.readthedocs.io/en/stable/) and
-[ruff](https://docs.astral.sh/ruff/):
+Run comprehensive tests and linting:
 
 ```shell
+# Run all tests and linting
 nox
-```
 
-To display a list of tasks:
-
-```shell
+# List available tasks
 nox --list
+
+# Run specific task
+nox -s lint
+nox -s tests
+nox -s notebooks
 ```
 
-To run only a task, such as `lint`, run `nox -s lint`.
+### Development Workflow
 
-If you are only using this library as a dependency, use:
+For active development, set up pre-commit hooks for automatic code formatting and linting:
 
 ```shell
+# Install pre-commit (recommended: use uv)
+uv tool install pre-commit
+
+# Set up pre-commit hooks
+pre-commit install
+
+# Run pre-commit on all files (optional)
+pre-commit run --all-files
+```
+
+This ensures code quality checks run automatically before every commit.
+
+### Using as a Library
+
+If you're only using L2GX as a dependency in another project:
+
+```shell
+# Install from GitHub
 pip install git+https://github.com/OxfordRSE/L2GX
+
+# Or with uv
+uv add git+https://github.com/OxfordRSE/L2GX
 ```
 
-For development, we highly recommend **installing the pre-commit hook** that
-helps lint and autoformat on every commit:
+### Development Tips
 
 ```shell
-brew install pre-commit     # macOS
-pipx install pre-commit     # with pipx
-sudo apt install pre-commit # debian
-sudo dnf install pre-commit # fedora
-uv tool install pre-commit  # with uv
-```
+# Format code
+uv run ruff format .
 
-To setup pre-commit hooks, run `pre-commit install` once in the repository;
-this will ensure that checks run before every commit.
+# Check code quality
+uv run ruff check .
+uv run pylint l2gx/
+
+# Type checking (if mypy is installed)
+uv run mypy l2gx/
+
+# Run examples
+uv run python examples/embedding_demo.py
+uv run python examples/embedding_demo.py cora  # Cora-only demo
+```
 
 ## License
 
