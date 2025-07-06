@@ -23,4 +23,3 @@ class CoraDataset(BaseDataset):
         data = Planetoid(root, **kwargs)
         self.data = data[0]
         self.edge_df, self.node_df = tg_to_polars(data)
-        self.raphtory_graph = self._to_raphtory()

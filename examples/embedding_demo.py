@@ -14,7 +14,15 @@ import numpy as np
 import networkx as nx
 import torch
 import time
+import matplotlib.pyplot as plt
 from typing import Dict, List
+from sklearn.manifold import TSNE
+from sklearn.metrics import silhouette_score
+from umap import UMAP
+import warnings
+warnings.filterwarnings('ignore', category=UserWarning)
+warnings.filterwarnings('ignore', category=FutureWarning)
+
 from l2gx.embedding import (
     get_embedding, 
     list_embeddings,
@@ -25,6 +33,7 @@ from l2gx.embedding import (
     GraphSAGEEmbedding,
     DGIEmbedding
 )
+from l2gx.datasets import get_dataset
 
 
 # ================================
@@ -51,6 +60,38 @@ def create_test_graphs():
     graphs['path'] = nx.path_graph(30)
     
     return graphs
+
+
+def load_cora_dataset():
+    """Load and prepare the Cora dataset for embedding demonstration."""
+    print("📚 LOADING CORA DATASET")
+    print("=" * 60)
+    
+    try:
+        # Load Cora dataset
+        cora = get_dataset("Cora")
+        cora_data = cora.to("torch-geometric")
+        
+        print(f"✅ Cora dataset loaded successfully")
+        print(f"   Nodes: {cora_data.num_nodes}")
+        print(f"   Edges: {cora_data.num_edges}")
+        print(f"   Features: {cora_data.x.shape[1]}")
+        print(f"   Classes: {cora_data.y.unique().numel()}")
+        print()
+        
+        # Convert to NetworkX for compatibility with existing demo functions
+        G = cora.to("networkx")
+        node_labels = cora_data.y.numpy()
+        
+        return G, cora_data, node_labels
+        
+    except Exception as e:
+        print(f"❌ Failed to load Cora dataset: {e}")
+        print("   Falling back to Karate Club graph...")
+        G = nx.karate_club_graph()
+        # Create dummy labels for karate club
+        node_labels = np.array([0 if i < 17 else 1 for i in range(G.number_of_nodes())])
+        return G, None, node_labels
 
 
 def create_inductive_test_graphs():
@@ -355,6 +396,200 @@ def demonstrate_dgi_features():
 
 
 # ================================
+# Visualization Functions
+# ================================
+
+def visualize_embeddings_with_tsne_and_umap(embeddings_dict: Dict[str, np.ndarray], 
+                                           node_labels: np.ndarray,
+                                           title_prefix: str = "Graph Embeddings"):
+    """Create comprehensive t-SNE and UMAP visualizations for multiple embedding methods."""
+    print(f"🎨 {title_prefix.upper()} VISUALIZATION")
+    print("=" * 60)
+    
+    n_methods = len(embeddings_dict)
+    if n_methods == 0:
+        print("❌ No embeddings provided for visualization")
+        return
+    
+    method_names = list(embeddings_dict.keys())
+    method_colors = ['navy', 'darkred', 'darkgreen', 'darkorange', 'purple', 'brown']
+    
+    # Create visualizations for both t-SNE and UMAP
+    for viz_type, viz_class, viz_params in [
+        ('t-SNE', TSNE, {'n_components': 2, 'random_state': 42, 'perplexity': min(30, len(node_labels) - 1), 
+                        'n_iter': 1000, 'verbose': 0, 'init': 'pca', 'learning_rate': 'auto'}),
+        ('UMAP', UMAP, {'n_components': 2, 'random_state': 42, 'n_neighbors': min(15, len(node_labels) - 1),
+                       'min_dist': 0.1, 'metric': 'euclidean', 'verbose': False})
+    ]:
+        print(f"🔄 Creating {viz_type} visualizations...")
+        
+        # Calculate layout
+        n_cols = min(3, n_methods)
+        n_rows = (n_methods + n_cols - 1) // n_cols
+        
+        fig, axes = plt.subplots(n_rows, n_cols, figsize=(6*n_cols, 5*n_rows))
+        if n_methods == 1:
+            axes = [axes]
+        elif n_rows == 1:
+            axes = axes if isinstance(axes, (list, np.ndarray)) else [axes]
+        else:
+            axes = axes.flatten()
+        
+        fig.suptitle(f'{viz_type} Visualization of {title_prefix}', fontsize=18)
+        
+        for idx, (method, embeddings) in enumerate(embeddings_dict.items()):
+            print(f"   Processing {method} with {viz_type}...")
+            
+            # Prepare embeddings
+            if torch.is_tensor(embeddings):
+                embedding_np = embeddings.detach().numpy().astype(np.float32)
+            else:
+                embedding_np = np.array(embeddings, dtype=np.float32)
+            
+            # Ensure data is clean
+            embedding_np = np.nan_to_num(embedding_np, nan=0.0, posinf=1.0, neginf=-1.0)
+            
+            # Apply dimensionality reduction
+            try:
+                reducer = viz_class(**viz_params)
+                embedding_2d = reducer.fit_transform(embedding_np)
+                
+                # Create scatter plot
+                scatter = axes[idx].scatter(embedding_2d[:, 0], embedding_2d[:, 1], 
+                                          c=node_labels, cmap='tab10', alpha=0.6, s=15)
+                
+                # Styling
+                color = method_colors[idx % len(method_colors)]
+                axes[idx].set_title(f'{method.upper()} Embedding', 
+                                   fontsize=12, color=color)
+                axes[idx].set_xlabel(f'{viz_type} Component 1')
+                axes[idx].set_ylabel(f'{viz_type} Component 2')
+                axes[idx].grid(True, alpha=0.3)
+                
+                # Add border color
+                for spine in axes[idx].spines.values():
+                    spine.set_edgecolor(color)
+                    spine.set_linewidth(2)
+                
+            except Exception as e:
+                axes[idx].text(0.5, 0.5, f'Failed: {str(e)[:50]}...', 
+                              transform=axes[idx].transAxes, ha='center', va='center')
+                axes[idx].set_title(f'{method.upper()} - Error', fontsize=12, color='red')
+        
+        # Hide empty subplots
+        for idx in range(n_methods, len(axes)):
+            axes[idx].set_visible(False)
+        
+        # Add colorbar if we have valid plots
+        if n_methods > 0:
+            try:
+                cbar = fig.colorbar(scatter, ax=axes[:n_methods], orientation='horizontal', 
+                                  pad=0.05, aspect=40, shrink=0.8)
+                cbar.set_label('Node Classes', fontsize=12)
+            except:
+                pass  # Skip colorbar if it fails
+        
+        plt.tight_layout()
+        plt.show()
+        print()
+    
+    # Add comparison summary
+    print("📊 VISUALIZATION COMPARISON")
+    print("=" * 60)
+    print("Key differences:")
+    print("• UMAP: Preserves global structure better, faster for large datasets")
+    print("• t-SNE: Emphasizes local neighborhoods, better cluster separation")
+    print("• UMAP: More deterministic, preserves distances")
+    print("• t-SNE: More sensitive to perplexity parameter, emphasizes clusters")
+    print()
+
+
+def cora_embedding_demonstration():
+    """Comprehensive embedding demonstration on the Cora dataset with visualizations."""
+    print("🌟 CORA DATASET EMBEDDING DEMONSTRATION")
+    print("=" * 80)
+    print()
+    
+    # Load Cora dataset
+    G, cora_data, node_labels = load_cora_dataset()
+    
+    # Test all embedding methods
+    embedding_methods = ['svd', 'gae', 'vgae', 'dgi', 'graphsage']
+    embeddings = {}
+    embedding_times = {}
+    
+    print("🚀 COMPUTING EMBEDDINGS ON CORA DATASET")
+    print("=" * 60)
+    
+    for method in embedding_methods:
+        print(f"🔄 Computing {method.upper()} embedding...")
+        try:
+            start_time = time.time()
+            
+            if method in ['gae', 'vgae', 'graphsage', 'dgi']:
+                if cora_data is not None:
+                    # Use PyTorch Geometric data for neural methods
+                    embedder = get_embedding(method, embedding_dim=64, epochs=100)
+                    embeddings[method] = embedder.fit_transform(cora_data)
+                else:
+                    # Fallback to NetworkX
+                    embedder = get_embedding(method, embedding_dim=64, epochs=50)
+                    embeddings[method] = embedder.fit_transform(G)
+            else:
+                # SVD works with NetworkX
+                embedder = get_embedding(method, embedding_dim=64)
+                embeddings[method] = embedder.fit_transform(G)
+            
+            end_time = time.time()
+            embedding_times[method] = end_time - start_time
+            
+            print(f"   ✅ {method.upper()}: {embeddings[method].shape} in {embedding_times[method]:.2f}s")
+            
+        except Exception as e:
+            print(f"   ❌ {method.upper()}: Failed - {e}")
+            # Create dummy embeddings for visualization
+            embeddings[method] = np.random.randn(len(node_labels), 64)
+            embedding_times[method] = 0.0
+    
+    print()
+    
+    # Compute embedding quality metrics
+    print("📊 EMBEDDING QUALITY ANALYSIS")
+    print("=" * 60)
+    
+    silhouette_scores = {}
+    for method, emb in embeddings.items():
+        if torch.is_tensor(emb):
+            emb_np = emb.detach().numpy()
+        else:
+            emb_np = emb
+        
+        try:
+            score = silhouette_score(emb_np, node_labels)
+            silhouette_scores[method] = score
+        except:
+            silhouette_scores[method] = 0.0
+    
+    print("   Method      | Silhouette Score | Time (s)")
+    print("   ------------|------------------|----------")
+    for method in embedding_methods:
+        if method in embeddings:
+            score = silhouette_scores.get(method, 0.0)
+            time_taken = embedding_times.get(method, 0.0)
+            print(f"   {method:<11} | {score:>13.3f}    | {time_taken:>6.2f}")
+    
+    print()
+    best_method = max(silhouette_scores.keys(), key=lambda k: silhouette_scores[k])
+    print(f"🏆 Best performing method: {best_method.upper()} (Score: {silhouette_scores[best_method]:.3f})")
+    print()
+    
+    # Create comprehensive visualizations
+    visualize_embeddings_with_tsne_and_umap(embeddings, node_labels, "Cora Dataset")
+    
+    return embeddings, silhouette_scores, embedding_times
+
+
+# ================================
 # Analysis and Comparison
 # ================================
 
@@ -487,6 +722,11 @@ def run_comprehensive_demo():
     torch.manual_seed(42)
     
     try:
+        # 0. Cora dataset demonstration with visualizations
+        print("PART 0: CORA DATASET DEMONSTRATION WITH VISUALIZATIONS")
+        print("-" * 60)
+        cora_embeddings, cora_scores, cora_times = cora_embedding_demonstration()
+        
         # 1. Basic interface demonstrations
         print("PART 1: BASIC INTERFACE & REGISTRY")
         print("-" * 40)
@@ -523,6 +763,8 @@ def run_comprehensive_demo():
         print("🎊 DEMONSTRATION SUMMARY")
         print("=" * 60)
         print("✅ Successfully demonstrated:")
+        print("   • Cora dataset loading and comprehensive embedding analysis")
+        print("   • t-SNE and UMAP visualizations for all embedding methods")
         print("   • Unified embedding interface with registry system")
         print("   • All 5 embedding methods: SVD, GAE, VGAE, GraphSAGE, DGI")
         print("   • Method-specific configurations and capabilities")
@@ -530,10 +772,14 @@ def run_comprehensive_demo():
         print("   • Parameter management and modification")
         print("   • Embedding analysis and quality assessment")
         print("   • Performance comparison and scalability testing")
+        print("   • Real-world dataset evaluation with citation network")
         print()
         print("🚀 The L2GX embedding framework is ready for production use!")
         
         return {
+            'cora': cora_embeddings,
+            'cora_scores': cora_scores,
+            'cora_times': cora_times,
             'basic': basic_results,
             'comparison': comparison_results,
             'graphsage': train_emb,
@@ -548,5 +794,34 @@ def run_comprehensive_demo():
         return None
 
 
+def run_cora_only_demo():
+    """Run just the Cora dataset demonstration with visualizations."""
+    print("🌟 CORA DATASET ONLY DEMONSTRATION")
+    print("=" * 80)
+    print()
+    
+    # Set random seeds for reproducibility
+    np.random.seed(42)
+    torch.manual_seed(42)
+    
+    try:
+        return cora_embedding_demonstration()
+    except Exception as e:
+        print(f"❌ Cora demo failed with error: {e}")
+        import traceback
+        traceback.print_exc()
+        return None
+
+
 if __name__ == "__main__":
-    results = run_comprehensive_demo()
+    import sys
+    
+    # Check command line arguments for demo type
+    if len(sys.argv) > 1 and sys.argv[1] == "cora":
+        print("Running Cora-only demonstration...")
+        results = run_cora_only_demo()
+    else:
+        print("Running comprehensive demonstration...")
+        print("Tip: Use 'python embedding_demo.py cora' for Cora-only demo")
+        print()
+        results = run_comprehensive_demo()

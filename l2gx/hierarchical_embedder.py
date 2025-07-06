@@ -8,16 +8,14 @@ The algorithm recursively subdivides large patches until they meet size constrai
 then computes embeddings and aligns them hierarchically.
 """
 
-import numpy as np
 import torch
-from typing import Dict, List, Tuple, Optional, Union, Callable, Any
+from typing import Dict, List, Optional, Any
 from abc import ABC, abstractmethod
 import time
 
 from l2gx.graphs import TGraph
 from l2gx.patch import generate_patches, Patch
 from l2gx.align.registry import get_aligner
-from l2gx.align.alignment import AlignmentProblem
 
 
 class EmbeddingMethod(ABC):

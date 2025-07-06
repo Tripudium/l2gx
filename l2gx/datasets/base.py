@@ -13,7 +13,7 @@ from torch_geometric.data import Data, InMemoryDataset
 from torch import Tensor
 from typing import Optional, Callable, Tuple, Dict
 
-from .utils import polars_to_tg, polars_to_raphtory, polars_to_networkx
+from .utils import polars_to_tg, polars_to_raphtory, polars_to_networkx, polars_to_temporal_data
 
 
 class BaseDataset(InMemoryDataset):
@@ -100,26 +100,36 @@ class BaseDataset(InMemoryDataset):
         edge_df, node_df = self._load_polars()
         return polars_to_networkx(edge_df, node_df)
 
+    def _to_temporal_data(self):
+        """
+        Convert the processed edge and node Polars DataFrames to a TemporalData object.
+        """
+        edge_df, node_df = self._load_polars()
+        return polars_to_temporal_data(edge_df, node_df)
+
     def to(self, fmt: str):  # pylint: disable=arguments-renamed
         """
         Convert the dataset to a different format.
         
         Args:
-            fmt: Target format ('raphtory', 'polars', 'torch-geometric', 'networkx', or device string for torch tensors)
+            fmt: Target format ('raphtory', 'polars', 'torch-geometric', 'networkx', 'temporal-data', or device string for torch tensors)
             
         Returns:
             Dataset in the requested format
         """
         match fmt:
             case "raphtory":
-                return self.raphtory_graph
+                return self._to_raphtory()
             case "polars":
                 return self.edge_df, self.node_df
             case "torch-geometric":
-                data, _ = self._to_torch_geometric()
-                return data
+                if not hasattr(self, "data"):
+                    self.data, _ = self._to_torch_geometric()
+                return self.data
             case "networkx":
                 return self._to_networkx()
+            case "temporal-data":
+                return self._to_temporal_data()
             case _:
                 return super().to(fmt)
 

@@ -11,6 +11,7 @@ Paper: Hu et al. "Open Graph Benchmark: Datasets for Machine Learning on Graphs"
 
 from pathlib import Path
 from typing import Optional, Callable
+import polars as pl
 
 try:
     from ogb.lsc import MAG240MDataset as OGBDataset
@@ -51,12 +52,12 @@ class MAG240MDataset(BaseDataset):
             **kwargs: Additional arguments passed to OGB dataset
             
         Note:
-            Requires the ogb library: pip install ogb
+            Requires the ogb library: uv add ogb
         """
         if OGBDataset is None:
             raise ImportError(
                 "MAG240M dataset requires the OGB library. "
-                "Install with: pip install ogb"
+                "Install with: uv add ogb"
             )
         
         # Logger is set up in BaseDataset
@@ -82,7 +83,7 @@ class MAG240MDataset(BaseDataset):
     @property
     def processed_file_names(self) -> list[str]:
         """Processed files for subsets."""
-        return ["subset_edge_data.parquet", "subset_node_data.parquet"]
+        return ["edge_data.parquet", "node_data.parquet"]
 
     def download(self):
         """Download is handled by OGB automatically."""
@@ -113,7 +114,6 @@ class MAG240MDataset(BaseDataset):
         )
         
         # Create empty placeholder files
-        import polars as pl
         empty_edges = pl.DataFrame({
             'src': [], 'dst': [], 'timestamp': []
         })
