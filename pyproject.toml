@@ -29,6 +29,7 @@ dependencies = [
     "numpy",
     "ogb>=1.3.6",
     "polars",
+    "psycopg2>=2.9.10",
     "pymanopt ~= 2.2",
     "pymetis",
     "python-louvain == 0.16", # imported as 'community'
