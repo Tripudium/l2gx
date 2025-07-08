@@ -2,6 +2,8 @@ from .registry import get_dataset, register_dataset, DATASET_REGISTRY
 from .base import BaseDataset
 from .as733 import AS733Dataset
 from .cora import CoraDataset
+from .citeseer import CiteSeerDataset
+from .pubmed import PubMedDataset
 from .dgraph import DGraphDataset
 from .elliptic import EllipticDataset
 from .mag240m import MAG240MDataset
@@ -26,6 +28,22 @@ def get_dataset_info():
             "edges": 5429,
             "features": 1433,
             "classes": 7,
+            "type": "static"
+        },
+        "CiteSeer": {
+            "description": "Citation network dataset",
+            "nodes": 3327,
+            "edges": 9104,
+            "features": 3703,
+            "classes": 6,
+            "type": "static"
+        },
+        "PubMed": {
+            "description": "Citation network dataset (PubMed abstracts)",
+            "nodes": 19717,
+            "edges": 88648,
+            "features": 500,
+            "classes": 3,
             "type": "static"
         },
         "as-733": {
@@ -75,6 +93,8 @@ __all__ = [
     "BaseDataset",
     "AS733Dataset",
     "CoraDataset",
+    "CiteSeerDataset",
+    "PubMedDataset",
     "DGraphDataset",
     "EllipticDataset",
     "MAG240MDataset",

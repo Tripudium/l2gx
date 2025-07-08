@@ -31,6 +31,7 @@ def generate_patches(
     min_overlap: Optional[int] = None,
     target_overlap: Optional[int] = None,
     sparsify_method: str = "resistance",
+    target_patch_degree: int = 4,
     clustering_params: Optional[Dict[str, Any]] = None,
     verbose: bool = True
 ) -> Tuple[List[Patch], torch.Tensor]:
@@ -50,6 +51,7 @@ def generate_patches(
         target_overlap: Target overlap between patches (default: computed from patch_size)
         sparsify_method: Graph sparsification method
             Options: 'resistance', 'rmst', 'none', 'edge_sampling', 'knn'
+        target_patch_degree: Target degree for patch graph sparsification (default: 4)
         clustering_params: Additional parameters for clustering algorithm
         verbose: Print progress information
         
@@ -140,6 +142,7 @@ def generate_patches(
         min_overlap=min_overlap,
         target_overlap=target_overlap,
         sparsify_method=sparsify_method,
+        target_patch_degree=target_patch_degree,
         verbose=verbose
     )
     

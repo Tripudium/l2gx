@@ -163,7 +163,7 @@ class TGraph(Graph):
             all_nodes.append(new_nodes)
         return torch.cat(all_nodes)
 
-    def subgraph(self, nodes: torch.Tensor, relabel=False, keep_x=True, keep_y=True):
+    def subgraph(self, nodes: torch.Tensor, relabel=True, keep_x=True, keep_y=True):
         """
         find induced subgraph for a set of nodes
 
@@ -266,6 +266,17 @@ class TGraph(Graph):
         else:
             nxgraph.add_edges_from(self.edges())
         return nxgraph
+
+    def to_tg(self):
+        """convert graph to PyTorch Geometric Data object"""
+        data = tg.data.Data(
+            edge_index=self.edge_index,
+            edge_attr=self.edge_attr if self.weighted else None,
+            x=self.x,
+            y=self.y,
+            num_nodes=self.num_nodes
+        )
+        return data
 
     def to(self, *args, graph_cls=None, **kwargs):
         """

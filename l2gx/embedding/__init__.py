@@ -25,6 +25,8 @@ from .registry import (
 )
 
 from .methods import GAEEmbedding, VGAEEmbedding, SVDEmbedding, GraphSAGEEmbedding, DGIEmbedding
+from .patched_embedding import PatchedEmbedding
+from .supervised_patch_embedding import SupervisedPatchedEmbedding
 from .train import train_gae
 from .utils import convert_graph_format
 
@@ -38,6 +40,8 @@ __all__ = [
     "SVDEmbedding",
     "GraphSAGEEmbedding",
     "DGIEmbedding",
+    "PatchedEmbedding",
+    "SupervisedPatchedEmbedding",
     "get_embedding",
     "list_embeddings",
     "register_embedding",
