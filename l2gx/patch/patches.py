@@ -393,9 +393,10 @@ def create_patch_data(
     min_overlap: int,
     target_overlap: int,
     min_patch_size: int | None = None,
-    sparsify_method: Literal["resistance", "rmst", "none"] = "resistance",
+    sparsify_method: Literal["resistance", "rmst", "none", "sample", "neighbors"] = "resistance",
     target_patch_degree: int = 4,
     gamma: int = 0,
+    use_conductance_weighting: bool = True,
     verbose: bool = False,
 ) -> tuple[list, object]:
     """Divide data into overlapping patches
@@ -419,6 +420,8 @@ def create_patch_data(
             ``sparsify_method='resistance'``, default is 4
 
         gamma: ``gamma`` value for use with ``sparsify_method='rmst'``, default is 0
+
+        use_conductance_weighting: if true, apply conductance weighting to patch graph, default is True
 
         verbose: if true, print some info about created patches, default is False
 
@@ -468,6 +471,9 @@ def create_patch_data(
             num_nodes=pg.num_nodes,
             undir=pg.undir,
         )
+    
+    # Apply conductance weighting consistently (like the old implementation)
+    if use_conductance_weighting:
         pg = conductance_weighted_graph(pg)
 
     if sparsify_method == "resistance":

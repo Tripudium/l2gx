@@ -33,6 +33,7 @@ def generate_patches(
     sparsify_method: str = "resistance",
     target_patch_degree: int = 4,
     clustering_params: Optional[Dict[str, Any]] = None,
+    use_conductance_weighting: bool = True,
     verbose: bool = True
 ) -> Tuple[List[Patch], torch.Tensor]:
     """
@@ -53,6 +54,7 @@ def generate_patches(
             Options: 'resistance', 'rmst', 'none', 'edge_sampling', 'knn'
         target_patch_degree: Target degree for patch graph sparsification (default: 4)
         clustering_params: Additional parameters for clustering algorithm
+        use_conductance_weighting: Apply conductance weighting to patch graph (default: True)
         verbose: Print progress information
         
     Returns:
@@ -143,6 +145,7 @@ def generate_patches(
         target_overlap=target_overlap,
         sparsify_method=sparsify_method,
         target_patch_degree=target_patch_degree,
+        use_conductance_weighting=use_conductance_weighting,
         verbose=verbose
     )
     

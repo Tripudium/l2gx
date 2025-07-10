@@ -174,19 +174,22 @@ class TGraph(Graph):
             subgraph
 
         """
-        index = torch.cat(
-            [
-                torch.arange(
-                    self.adj_index[node], self.adj_index[node + 1], dtype=torch.long
-                )
-                for node in nodes
-            ]
-        )
-        node_mask = torch.zeros(self.num_nodes, dtype=torch.bool, device=self.device)
-        node_mask[nodes] = True
+        # Fix: Properly filter edges where both endpoints are in the subgraph
+        node_set = set(nodes.cpu().numpy() if hasattr(nodes, 'cpu') else nodes)
+        
+        # Find all edges where both source and target are in the node set
+        valid_edge_mask = torch.zeros(self.edge_index.shape[1], dtype=torch.bool, device=self.device)
+        for i in range(self.edge_index.shape[1]):
+            src = self.edge_index[0, i].item()
+            tgt = self.edge_index[1, i].item()
+            if src in node_set and tgt in node_set:
+                valid_edge_mask[i] = True
+        
+        index = torch.nonzero(valid_edge_mask, as_tuple=True)[0]
+        
+        # Create mapping from old node IDs to new node IDs
         node_ids = torch.zeros(self.num_nodes, dtype=torch.long, device=self.device)
         node_ids[nodes] = torch.arange(len(nodes), device=self.device)
-        index = index[node_mask[self.edge_index[1][index]]]
         edge_attr = self.edge_attr
         if relabel:
             node_labels = None

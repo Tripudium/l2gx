@@ -1,273 +1,208 @@
-# L2GX Experiments Configuration System
+# L2GX Embedding & Visualization System
 
-This directory contains a comprehensive configuration management system for running experiments with the L2GX framework on the Cora dataset.
-
-## Overview
-
-The configuration system provides:
-
-- **YAML-based configuration files** for easy parameter management
-- **Type-safe configuration classes** with validation
-- **Experiment orchestration** for node reconstruction and classification tasks
-- **Hyperparameter search capabilities** (grid search, random search, Optuna)
-- **Reproducible experiments** with seed management
-- **Comprehensive logging and visualization**
-
-## Files Structure
-
-```
-experiments/
-├── config.yaml              # Full configuration with all parameters
-├── config_simple.yaml       # Simplified configuration for quick testing
-├── config_manager.py        # Configuration management system
-├── cora_experiments.py      # Main experiment runner
-├── README.md                # This file
-├── results/                 # Experiment outputs (created automatically)
-├── logs/                    # Log files (created automatically)
-└── plots/                   # Generated visualizations (created automatically)
-```
+A modular, configuration-driven system for generating and visualizing graph embeddings using Local2Global (L2G) methods.
 
 ## Quick Start
 
-### 1. Run a Simple Test
-
 ```bash
-# Run with simplified configuration (faster)
-cd experiments
-python cora_experiments.py --config config_simple.yaml
+# Run patched L2G embedding with visualization
+python plot_embeddings.py configs/cora_patched.yaml
+
+# Run whole graph embedding with visualization  
+python plot_embeddings.py configs/cora_whole.yaml
+
+# Run just the embedding (no visualization)
+python embedding_experiment.py configs/cora_patched.yaml
 ```
 
-### 2. Run Full Experiments
+## Architecture
 
-```bash
-# Run with full configuration
-python cora_experiments.py --config config.yaml
-```
+The system is split into two main components:
 
-### 3. Custom Output Directory
+### 1. Core Embedding (`embedding_experiment.py`)
+- **Purpose**: Handles dataset loading, embedding computation, and result saving
+- **Input**: YAML configuration file
+- **Output**: Embedding arrays (.npy) and metadata (YAML/txt)
+- **Key Feature**: `num_patches=1` triggers whole-graph embedding, `num_patches>1` triggers patched L2G
 
-```bash
-python cora_experiments.py --config config.yaml --output-dir my_custom_results
-```
+### 2. Visualization (`plot_embeddings.py`) 
+- **Purpose**: Uses `EmbeddingExperiment` to compute embeddings, then creates visualizations
+- **Input**: YAML configuration file
+- **Output**: UMAP plots, individual patch plots, grid overviews
+- **Key Feature**: Automatically handles visualization based on embedding type
 
-## Configuration Sections
+## Configuration Format
 
-### Dataset Configuration
+Clean YAML configs with **no visualization parameters** (handled automatically):
+
 ```yaml
+experiment:
+  name: "experiment_name"
+  output_dir: "results/folder"
+
 dataset:
-  name: "Cora"                    # Dataset to use
-  use_default_splits: true        # Use predefined train/val/test splits
-  train_ratio: 0.6               # Custom split ratios (if use_default_splits: false)
-  val_ratio: 0.2
-  test_ratio: 0.2
-  split_seed: 42                 # Seed for reproducible splits
-```
+  name: "Cora"
 
-### Embedding Configuration
-```yaml
 embedding:
-  method: "vgae"                 # Embedding method: ['gae', 'vgae', 'svd', 'graphsage', 'dgi']
-  embedding_dim: 64              # Embedding dimension
-  hidden_dim: 32                 # Hidden layer dimension (neural methods)
-  num_epochs: 200                # Training epochs (neural methods)
-  learning_rate: 0.01            # Learning rate
-  dropout: 0.5                   # Dropout rate
-  graphsage_aggregator: "mean"   # GraphSAGE aggregator: ['mean', 'max', 'lstm']
-  dgi_encoder: "gcn"             # DGI encoder: ['gcn', 'gat', 'sage']
-  svd_matrix_type: "normalized"  # SVD matrix: ['adjacency', 'laplacian', 'normalized']
-```
+  method: "vgae"
+  embedding_dim: 128
+  hidden_dim_multiplier: 2
+  epochs: 1000
+  learning_rate: 0.001
+  patience: 20
 
-### Patch Configuration
-```yaml
 patches:
-  num_patches: 10                # Number of patches (set to 1 for global embedding)
-  clustering_method: "metis"     # Clustering: ['metis', 'louvain', 'fennel', 'hierarchical']
-  min_overlap: 27                # Minimum overlap between patches
-  target_overlap: 54             # Target overlap
-  sparsification_method: "resistance"  # Sparsification method
+  num_patches: 10  # Use 1 for whole graph
+  clustering_method: "metis"
+  # ... other patch parameters
+
+alignment:
+  method: "l2g"
+  scale: false
 ```
 
-### Task Configurations
-```yaml
-node_reconstruction:
-  loss_function: "mse"           # Loss function
-  evaluation_metrics: ["mse", "mae", "cosine_similarity"]
-  reconstruction_method: "autoencoder"
+## Available Configurations
 
-node_classification:
-  classifier: "logistic_regression"  # Classifier type
-  evaluation_metrics: ["accuracy", "f1_macro", "f1_micro", "precision", "recall"]
-  stratify: true                 # Use stratified sampling
+### Pre-made Configs
+- **`configs/cora_patched.yaml`** - Cora with 10-patch L2G embedding
+- **`configs/cora_whole.yaml`** - Cora with whole graph embedding (`num_patches=1`)
+- **`configs/pubmed_patched.yaml`** - PubMed with optimized patch parameters
+- **`configs/dgi_patched.yaml`** - Cora with DGI embedding method
+
+### Supported Datasets
+- `Cora` - Citation network (2708 nodes, 7 classes)
+- `PubMed` - Citation network (19717 nodes, 3 classes) 
+- `CiteSeer` - Citation network
+- Any dataset in L2GX registry
+
+### Embedding Methods
+- `vgae` - Variational Graph Auto-Encoder
+- `gae` - Graph Auto-Encoder
+- `dgi` - Deep Graph Infomax
+- `graphsage` - GraphSAGE
+
+## Key Features
+
+### 🔧 **Unified Embedding Logic**
+- **Whole Graph**: Set `num_patches: 1` in config
+- **Patched L2G**: Set `num_patches: >1` in config
+- Same codebase handles both approaches seamlessly
+
+### 📊 **Automatic Visualization**
+- **Main embedding plot**: Named based on dataset and type (e.g., `7classes_patched_l2g.png`)
+- **Individual patch plots**: Only created for patched embeddings
+- **Grid overview**: Shows all patches before alignment
+- **Consistent styling**: Datashader-based old-style plots
+
+### 💾 **Comprehensive Output**
+Each experiment generates:
+```
+results/experiment_name/
+├── embedding.npy              # Main embedding array
+├── 7classes_patched_l2g.png   # Main visualization  
+├── experiment_results.yaml    # Complete metadata
+├── summary.txt                # Human-readable summary
+└── individual_patches/        # (if patches used)
+    ├── patch_01_embedding.png
+    ├── ...
+    └── patch_grid_overview.png
 ```
 
-## Experimental Tasks
+### 🏗️ **Modular Design**
+- **`EmbeddingExperiment`**: Core logic, no visualization dependencies
+- **`EmbeddingVisualizer`**: Visualization logic, uses completed experiment
+- **Clean separation**: Can run embeddings without visualization
+- **Reusable**: Easy to extend with new visualization types
 
-### Task 1: Node Reconstruction
-- **Objective**: Reconstruct node features from learned embeddings
-- **Methods**: Linear decoder, MLP decoder, autoencoder
-- **Metrics**: MSE, MAE, cosine similarity
-- **Use case**: Evaluate how well embeddings preserve node information
+## Usage Examples
 
-### Task 2: Node Classification
-- **Objective**: Classify nodes into their respective categories
-- **Methods**: Logistic regression, SVM, Random Forest, MLP
-- **Metrics**: Accuracy, F1-score (macro/micro), precision, recall
-- **Use case**: Evaluate embedding quality for downstream tasks
-
-## Hyperparameter Search
-
-Enable hyperparameter search in your configuration:
-
-```yaml
-hyperparameter_search:
-  enabled: true
-  method: "grid"                 # 'grid', 'random', or 'optuna'
-  n_trials: 50                   # For random/optuna search
-  search_space:
-    embedding_dim: [32, 64, 128]
-    hidden_dim: [16, 32, 64]
-    learning_rate: [0.001, 0.01, 0.1]
-    num_epochs: [100, 200, 300]
-    num_patches: [5, 10, 15, 20]
-```
-
-## Output Structure
-
-After running experiments, you'll find:
-
-```
-results/
-├── final_results.json          # Aggregated results (JSON format)
-├── final_results.pkl           # Aggregated results (pickle format)
-├── intermediate/               # Individual run results (if enabled)
-│   ├── run_000_results.json
-│   ├── run_001_results.json
-│   └── ...
-└── plots/
-    └── results_summary.png     # Visualization of results
-```
-
-## Example Usage Patterns
-
-### Quick Development Testing
+### Compare Approaches
 ```bash
-# Use simple config for rapid iteration
-python cora_experiments.py --config config_simple.yaml
+# Generate patched L2G embedding
+python plot_embeddings.py configs/cora_patched.yaml
+
+# Generate whole graph embedding  
+python plot_embeddings.py configs/cora_whole.yaml
+
+# Compare results in results/cora_patched/ vs results/cora_whole/
 ```
 
-### Production Experiments
+### Large Dataset
 ```bash
-# Use full config for comprehensive evaluation
-python cora_experiments.py --config config.yaml
+# PubMed with optimized parameters
+python plot_embeddings.py configs/pubmed_patched.yaml
 ```
 
-### Parameter Exploration
-1. Copy `config.yaml` to `config_custom.yaml`
-2. Modify parameters of interest
-3. Run: `python cora_experiments.py --config config_custom.yaml`
-
-### Hyperparameter Search
-1. Enable hyperparameter search in config
-2. Define search space
-3. Run experiments and analyze results
-
-## Configuration Management in Python
-
-You can also use the configuration system programmatically:
-
-```python
-from config_manager import ConfigManager, Config
-
-# Load configuration
-config_manager = ConfigManager()
-config = config_manager.load_config("config.yaml")
-
-# Access parameters
-embedding_params = config_manager.get_embedding_params()
-patch_params = config_manager.get_patch_params()
-alignment_params = config_manager.get_alignment_params()
-
-# Modify configuration
-config.embedding.embedding_dim = 128
-config.patches.num_patches = 20
-
-# Save modified configuration
-config_manager.save_config(config, "config_modified.yaml")
+### Different Methods
+```bash
+# DGI method instead of VGAE
+python plot_embeddings.py configs/dgi_patched.yaml
 ```
 
-## Best Practices
+### Embedding Only (No Plots)
+```bash
+# Just compute embedding, save arrays
+python embedding_experiment.py configs/cora_patched.yaml
+```
 
-### 1. Parameter Organization
-- **Start with `config_simple.yaml`** for initial testing
-- **Use `config.yaml`** for comprehensive experiments
-- **Create custom configs** for specific research questions
+## Implementation Details
 
-### 2. Reproducibility
-- Always set `random_seed` for reproducible results
-- Use `num_runs > 1` to get statistical confidence
-- Save configurations alongside results
+### Fixed TGraph.subgraph() Bug
+The system includes a critical fix to `l2gx/graphs/tgraph.py` that resolves edge_index ordering issues:
+- **Problem**: Old implementation created spurious self-loops and dropped valid edges
+- **Fix**: Proper edge filtering where both endpoints are in subgraph node set
+- **Impact**: L2G embeddings now show proper class separation
 
-### 3. Experiment Management
-- Use descriptive `experiment.name` values
-- Organize results by research question or parameter sweep
-- Keep logs for debugging and analysis
+### Smart Patch Detection
+- `num_patches=1`: Automatically uses whole graph embedding (no patches created)
+- `num_patches>1`: Creates patches and applies L2G alignment
+- Visualization automatically adapts based on embedding type
 
-### 4. Performance Optimization
-- Use smaller configurations for development
-- Start with fewer patches and epochs
-- Scale up gradually for production runs
+### Performance Optimizations
+- **Parallel patch generation**: Uses efficient clustering algorithms
+- **Optimized visualization**: Different DPI settings for different plot types
+- **Memory efficient**: Saves embeddings immediately, manages large datasets
 
-### 5. Result Analysis
-- Check both individual run results and aggregated statistics
-- Use visualizations to understand performance trends
-- Compare across different embedding methods and configurations
+## Configuration Tips
 
-## Troubleshooting
+### For Different Datasets
+- **Small datasets (Cora)**: 5-15 patches, standard parameters
+- **Large datasets (PubMed)**: 15-25 patches, larger overlaps, more epochs
+- **Very large**: Consider higher `target_patch_degree` and more patches
 
-### Common Issues
+### For Different Methods
+- **VGAE/GAE**: `hidden_dim_multiplier: 2-4` works well
+- **DGI**: Often good with `hidden_dim_multiplier: 1`
+- **GraphSAGE**: May need different learning rates
 
-1. **Configuration file not found**
-   ```bash
-   # Make sure you're in the experiments directory
-   cd experiments
-   python cora_experiments.py --config config.yaml
-   ```
+### Performance vs Quality
+- **More patches**: Better scalability, potentially more alignment challenges
+- **Larger overlaps**: Better alignment, higher memory usage
+- **Higher degrees**: Denser patches, more compute per patch
 
-2. **Out of memory errors**
-   ```yaml
-   # Reduce parameters in config:
-   embedding_dim: 32      # Smaller dimension
-   hidden_dim: 16         # Smaller hidden layer
-   num_patches: 5         # Fewer patches
-   ```
+## Error Handling
 
-3. **Slow experiments**
-   ```yaml
-   # Use config_simple.yaml or reduce:
-   num_epochs: 50         # Fewer epochs
-   num_runs: 1            # Single run for testing
-   ```
-
-4. **Invalid parameters**
-   - Check the validation errors in the log
-   - Refer to the valid options in the configuration comments
-   - Use the ConfigManager validation to catch errors early
+Common issues and solutions:
+- **Missing dataset**: Check dataset name spelling in config
+- **Memory errors**: Reduce `num_patches` or `embedding_dim`
+- **Convergence issues**: Increase `patience` or adjust `learning_rate`
+- **Poor class separation**: Check `use_conductance_weighting: true`
 
 ## Extending the System
 
+### Adding New Datasets
+1. Ensure dataset is available in L2GX registry
+2. Create config file with appropriate parameters
+3. Test with `embedding_experiment.py` first
+
+### Adding New Visualization Types
+1. Extend `EmbeddingVisualizer` class
+2. Add new methods for your visualization type
+3. Update `create_all_visualizations()` to include them
+
 ### Adding New Embedding Methods
-1. Add method name to `VALID_EMBEDDING_METHODS` in `config_manager.py`
-2. Update `get_embedding_params()` method for method-specific parameters
-3. Update configuration file with new method options
+1. Implement in L2GX embedding registry
+2. Add method name to config
+3. Tune `hidden_dim_multiplier` and other parameters
 
-### Adding New Tasks
-1. Create new configuration dataclass (e.g., `NodeClusteringConfig`)
-2. Add task implementation in `cora_experiments.py`
-3. Update aggregation and visualization functions
-
-### Adding New Metrics
-1. Add metric names to configuration evaluation_metrics lists
-2. Implement metric computation in task functions
-3. Update visualization functions if needed
-
-This configuration system provides a robust foundation for systematic experimentation with the L2GX framework. It balances flexibility with ease of use, making it suitable for both rapid prototyping and comprehensive research studies.
+This modular design makes the system highly extensible while maintaining clean separation of concerns between embedding computation and visualization.

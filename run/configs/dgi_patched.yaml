@@ -1,0 +1,30 @@
+# Deep Graph Infomax (DGI) experiment
+experiment:
+  name: "cora_dgi_patched"
+  description: "Cora with DGI and patched L2G embedding"
+  output_dir: "results/cora_dgi"
+
+dataset:
+  name: "Cora"
+
+embedding:
+  method: "dgi"
+  embedding_dim: 128
+  hidden_dim_multiplier: 1
+  epochs: 1000
+  learning_rate: 0.001
+  patience: 20
+
+patches:
+  num_patches: 8
+  clustering_method: "louvain"
+  min_overlap: 128
+  target_overlap: 256
+  sparsify_method: "rmst"
+  target_patch_degree: 5
+  use_conductance_weighting: false
+  verbose: false
+
+alignment:
+  method: "l2g"
+  scale: true

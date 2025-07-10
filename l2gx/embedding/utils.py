@@ -12,25 +12,58 @@ import scipy.sparse as sp
 from typing import Union, Literal
 
 
+import tempfile
+import torch
+
+
 class EarlyStopping:
-    """Early stopping utility for training."""
+    """Early stopping utility for training with model state management."""
     
-    def __init__(self, patience=10, min_delta=0):
+    def __init__(self, patience=10, min_delta=0, save_best_model=True):
         self.patience = patience
         self.min_delta = min_delta
         self.counter = 0
         self.best_loss = None
+        self.save_best_model = save_best_model
+        self._temp_file = None
         
-    def __call__(self, val_loss):
+        if self.save_best_model:
+            self._temp_file = tempfile.NamedTemporaryFile(delete=False)
+        
+    def __call__(self, val_loss, model=None):
+        improved = False
+        
         if self.best_loss is None:
             self.best_loss = val_loss
+            improved = True
         elif val_loss < self.best_loss - self.min_delta:
             self.best_loss = val_loss
             self.counter = 0
+            improved = True
         else:
             self.counter += 1
             
-        return self.counter >= self.patience
+        # Save best model state if improved
+        if improved and self.save_best_model and model is not None:
+            torch.save(model.state_dict(), self._temp_file.name)
+            
+        # Check if we should stop
+        should_stop = self.counter >= self.patience
+        
+        # Restore best model if stopping
+        if should_stop and self.save_best_model and model is not None:
+            model.load_state_dict(torch.load(self._temp_file.name))
+            
+        return should_stop
+    
+    def __del__(self):
+        # Clean up temporary file
+        if self._temp_file is not None:
+            try:
+                import os
+                os.unlink(self._temp_file.name)
+            except:
+                pass
 
 
 def convert_graph_format(

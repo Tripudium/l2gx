@@ -33,7 +33,9 @@ class GAEEmbedding(TransductiveGraphEmbedding):
                  embedding_dim: int,
                  hidden_dim: int = 32,
                  learning_rate: float = 0.01,
-                 epochs: int = 200,
+                 weight_decay: float = 0.0,
+                 epochs: int = 1000,
+                 patience: int = None,
                  distance_decoder: bool = False,
                  device: str = 'cpu',
                  **kwargs):
@@ -44,7 +46,9 @@ class GAEEmbedding(TransductiveGraphEmbedding):
             embedding_dim: Output embedding dimensionality
             hidden_dim: Hidden layer dimensionality in encoder
             learning_rate: Learning rate for training
+            weight_decay: Weight decay for optimizer
             epochs: Number of training epochs
+            patience: Early stopping patience (None to disable)
             distance_decoder: Use distance-based decoder instead of inner product
             device: Device to run computations on ('cpu' or 'cuda')
             **kwargs: Additional parameters
@@ -52,7 +56,9 @@ class GAEEmbedding(TransductiveGraphEmbedding):
         super().__init__(embedding_dim, **kwargs)
         self.hidden_dim = hidden_dim
         self.learning_rate = learning_rate
+        self.weight_decay = weight_decay
         self.epochs = epochs
+        self.patience = patience
         self.distance_decoder = distance_decoder
         self.device = device
         
@@ -87,8 +93,11 @@ class GAEEmbedding(TransductiveGraphEmbedding):
         class GCNEncoder(nn.Module):
             def __init__(self, input_dim, hidden_dim, output_dim):
                 super().__init__()
-                self.conv1 = GCNConv(input_dim, hidden_dim)
-                self.conv2 = GCNConv(hidden_dim, output_dim)
+                # Match old implementation parameters
+                self.conv1 = GCNConv(input_dim, hidden_dim, cached=True, bias=True, 
+                                   add_self_loops=True, normalize=True)
+                self.conv2 = GCNConv(hidden_dim, output_dim, cached=True, bias=True,
+                                   add_self_loops=True, normalize=True)
                 
             def forward(self, x, edge_index):
                 x = F.relu(self.conv1(x, edge_index))
@@ -106,7 +115,10 @@ class GAEEmbedding(TransductiveGraphEmbedding):
             data=self._data,
             epochs=self.epochs,
             lr=self.learning_rate,
-            variational=False
+            weight_decay=self.weight_decay,
+            patience=self.patience,
+            variational=False,
+            verbose=False
         )
         
         self.is_fitted = True
@@ -147,7 +159,9 @@ class VGAEEmbedding(TransductiveGraphEmbedding):
                  embedding_dim: int,
                  hidden_dim: int = 32,
                  learning_rate: float = 0.01,
-                 epochs: int = 200,
+                 weight_decay: float = 0.0,
+                 epochs: int = 1000,
+                 patience: int = None,
                  distance_decoder: bool = False,
                  device: str = 'cpu',
                  **kwargs):
@@ -158,7 +172,9 @@ class VGAEEmbedding(TransductiveGraphEmbedding):
             embedding_dim: Output embedding dimensionality
             hidden_dim: Hidden layer dimensionality in encoder
             learning_rate: Learning rate for training
+            weight_decay: Weight decay for optimizer
             epochs: Number of training epochs
+            patience: Early stopping patience (None to disable)
             distance_decoder: Use distance-based decoder instead of inner product
             device: Device to run computations on ('cpu' or 'cuda')
             **kwargs: Additional parameters
@@ -166,7 +182,9 @@ class VGAEEmbedding(TransductiveGraphEmbedding):
         super().__init__(embedding_dim, **kwargs)
         self.hidden_dim = hidden_dim
         self.learning_rate = learning_rate
+        self.weight_decay = weight_decay
         self.epochs = epochs
+        self.patience = patience
         self.distance_decoder = distance_decoder
         self.device = device
         
@@ -201,9 +219,13 @@ class VGAEEmbedding(TransductiveGraphEmbedding):
         class VariationalGCNEncoder(nn.Module):
             def __init__(self, input_dim, hidden_dim, output_dim):
                 super().__init__()
-                self.conv1 = GCNConv(input_dim, hidden_dim)
-                self.conv_mu = GCNConv(hidden_dim, output_dim)
-                self.conv_logstd = GCNConv(hidden_dim, output_dim)
+                # Match old implementation parameters
+                self.conv1 = GCNConv(input_dim, hidden_dim, cached=True, bias=True,
+                                   add_self_loops=True, normalize=True)
+                self.conv_mu = GCNConv(hidden_dim, output_dim, cached=True, bias=True,
+                                     add_self_loops=True, normalize=True)
+                self.conv_logstd = GCNConv(hidden_dim, output_dim, cached=True, bias=True,
+                                         add_self_loops=True, normalize=True)
                 
             def forward(self, x, edge_index):
                 x = F.relu(self.conv1(x, edge_index))
@@ -221,7 +243,10 @@ class VGAEEmbedding(TransductiveGraphEmbedding):
             data=self._data,
             epochs=self.epochs,
             lr=self.learning_rate,
-            variational=True
+            weight_decay=self.weight_decay,
+            patience=self.patience,
+            variational=True,
+            verbose=False
         )
         
         self.is_fitted = True

@@ -22,6 +22,7 @@ classifiers = [
 
 dependencies = [
     "autograd ~= 1.7",
+    "datashader>=0.18.1",
     "geotorch",
     "ilupp == 1.0.*",
     "networkx>=2.0",

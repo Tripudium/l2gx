@@ -1,0 +1,19 @@
+# Cora dataset with whole graph embedding (num_patches=1)
+experiment:
+  name: "cora_whole_graph"
+  description: "Cora dataset with whole graph embedding"
+  output_dir: "results/cora_whole"
+
+dataset:
+  name: "Cora"
+
+embedding:
+  method: "vgae"
+  embedding_dim: 128
+  hidden_dim_multiplier: 2
+  epochs: 1000
+  learning_rate: 0.001
+  patience: 20
+
+patches:
+  num_patches: 1  # Single patch = whole graph embedding

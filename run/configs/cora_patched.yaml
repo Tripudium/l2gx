@@ -1,0 +1,30 @@
+# Cora dataset with patched L2G embedding
+experiment:
+  name: "cora_patched_l2g"
+  description: "Cora dataset with 10-patch L2G embedding"
+  output_dir: "results/cora_patched"
+
+dataset:
+  name: "Cora"
+
+embedding:
+  method: "vgae"
+  embedding_dim: 128
+  hidden_dim_multiplier: 2
+  epochs: 10000
+  learning_rate: 0.001
+  patience: 20
+
+patches:
+  num_patches: 10
+  clustering_method: "metis"
+  min_overlap: 256
+  target_overlap: 512
+  sparsify_method: "resistance"
+  target_patch_degree: 4
+  use_conductance_weighting: true
+  verbose: false
+
+alignment:
+  method: "l2g"
+  scale: false
