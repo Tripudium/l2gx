@@ -4,7 +4,7 @@ Utilities for converting between different graph formats.
 
 import numpy as np
 import polars as pl
-from typing import Tuple, Optional, Dict, Callable, List
+from typing import Optional, Callable
 import torch
 from torch import Tensor
 from torch_geometric.data import Data, TemporalData
@@ -17,7 +17,7 @@ def polars_to_tg(
     edge_df: pl.DataFrame,
     node_df: pl.DataFrame = None,
     pre_transform: Optional[Callable] = None,
-) -> Tuple[Data, Optional[Dict[str, Tensor]]]:
+) -> tuple[Data, Optional[dict[str, Tensor]]]:
     """
     Convert a pair of Polars DataFrames (edge and node) to a list of PyTorch Geometric Data objects.
     """
@@ -120,7 +120,7 @@ def polars_to_raphtory(edge_df: pl.DataFrame, node_df: pl.DataFrame = None) -> G
     return graph
 
 
-def tg_to_polars(data_list: List[Data]) -> Tuple[pl.DataFrame, pl.DataFrame]:
+def tg_to_polars(data_list: list[Data]) -> tuple[pl.DataFrame, pl.DataFrame]:
     """
     Convert a list of PyTorch Geometric Data objects to a Polars DataFrame.
     """

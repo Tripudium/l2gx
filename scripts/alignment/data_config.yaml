@@ -1,0 +1,26 @@
+# Configuration for test_alignment.py
+
+# Point generation specification
+point_spec:
+  n_clusters: 5
+  scale: 1.0
+  std: 0.2
+  max_size: 2000
+  min_size: 128
+  dim: 2
+
+# Patch generation specification  
+patch_spec:
+  sample_size: 20
+  min_degree: 4
+  min_overlap: 64
+  min_patch_size: 128
+  eps: 2
+  kmeans: false
+
+# Noise profile for data transformation
+noise_profile:
+  noise_level: 0.1
+  shift_scale: 10
+  scale_range: [0.01, 100]
+

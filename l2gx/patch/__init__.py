@@ -1,12 +1,12 @@
 """
 L2GX Patch Module
 
-This module provides comprehensive patch-based graph processing capabilities for the 
+This module provides comprehensive patch-based graph processing capabilities for the
 Local2Global algorithm, including:
 
 - Patch creation and management
 - Graph clustering algorithms
-- Graph sparsification techniques  
+- Graph sparsification techniques
 - Lazy coordinate systems for memory efficiency
 - Coordinate transformation utilities
 
@@ -18,24 +18,24 @@ Main components:
 - utils: Coordinate transformation and error computation utilities
 """
 
-# Core patch functionality
-from .patches import (
+# Core patch functionality and high-level generation
+from l2gx.patch.patches import (
+    # Core classes
+    Patch,
+    # Core functions
     create_overlapping_patches,
     create_patch_data,
-    Patch,
-    MeanAggregatorPatch,
-    FilePatch,
-)
-
-# Lazy coordinate systems
-from .lazy import (
-    BaseLazyCoordinates,
-    LazyMeanAggregatorCoordinates,
-    LazyFileCoordinates,
+    create_patches,
+    # High-level generation functions
+    create_patches_by_size,
+    rolling_window_graph,
+    # Utilities
+    list_clustering_methods,
+    estimate_patch_parameters,
 )
 
 # Clustering algorithms
-from .clustering import (
+from l2gx.patch.clustering import (
     hierarchical_clustering,
     fennel_clustering,
     louvain_clustering,
@@ -44,7 +44,7 @@ from .clustering import (
 )
 
 # Sparsification methods
-from .sparsify import (
+from l2gx.patch.sparsify import (
     resistance_sparsify,
     edge_sampling_sparsify,
     nearest_neighbor_sparsify,
@@ -55,17 +55,8 @@ from .sparsify import (
     resistance_weighted_graph,
 )
 
-# High-level patch generation functions
-from .generate import (
-    generate_patches,
-    generate_patches_by_size,
-    generate_patches_adaptive,
-    list_clustering_methods,
-    estimate_patch_parameters,
-)
-
 # Utility functions
-from .utils import (
+from l2gx.patch.utils import (
     seed,
     ensure_extension,
     random_gen,
@@ -80,32 +71,22 @@ from .utils import (
 
 __all__ = [
     # Core patch functionality
+    "Patch",
     "create_overlapping_patches",
     "create_patch_data",
-    "Patch",
-    "MeanAggregatorPatch",
-    "FilePatch",
-    
-    # Lazy coordinate systems
-    "BaseLazyCoordinates",
-    "LazyMeanAggregatorCoordinates", 
-    "LazyFileCoordinates",
-    
+    "create_patches",
     # High-level patch generation
     "generate_patches",
     "generate_patches_by_size",
-    "generate_patches_adaptive",
+    "rolling_window_graph",
     "list_clustering_methods",
     "estimate_patch_parameters",
-    
     # Clustering algorithms
     "hierarchical_clustering",
     "fennel_clustering",
     "louvain_clustering",
     "metis_clustering",
     "spread_clustering",
-    "hierarchical_aglomerative_clustering",
-    
     # Sparsification methods
     "resistance_sparsify",
     "edge_sampling_sparsify",
@@ -115,7 +96,6 @@ __all__ = [
     "effective_resistances",
     "conductance_weighted_graph",
     "resistance_weighted_graph",
-    
     # Utility functions
     "seed",
     "ensure_extension",

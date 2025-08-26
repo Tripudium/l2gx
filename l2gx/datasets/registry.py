@@ -42,10 +42,10 @@ def get_dataset(name: str, **kwargs):
     Examples:
         >>> # Load Cora dataset
         >>> cora = get_dataset("Cora")
-        
+
         >>> # Load AS-733 with custom root directory
         >>> as733 = get_dataset("as-733", root="/path/to/data")
-        
+
         >>> # Load Elliptic with source file
         >>> elliptic = get_dataset("Elliptic", source_file="/path/to/elliptic.zip")
     """
@@ -71,6 +71,4 @@ def get_dataset(name: str, **kwargs):
             f"Check that all required data files are available."
         ) from e
     except Exception as e:
-        raise RuntimeError(
-            f"Failed to initialize dataset '{name}': {e}"
-        ) from e
+        raise RuntimeError(f"Failed to initialize dataset '{name}': {e}") from e

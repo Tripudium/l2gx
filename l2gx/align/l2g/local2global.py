@@ -18,158 +18,127 @@
 #  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 #  SOFTWARE.
 
-import numpy as np
-import scipy as sp
-import scipy.sparse as ss
-from scipy.sparse.linalg import lsmr
-
-from l2gx.patch import Patch
+from l2gx.graphs.tgraph import TGraph
 from l2gx.align.registry import register_aligner
 from l2gx.align.alignment import AlignmentProblem
 
-rg = np.random.default_rng()
-
-
-def _cov_svd(coordinates1: np.ndarray, coordinates2: np.ndarray):
-    """
-    Compute SVD of covariance matrix between two sets of coordinates
-
-    Args:
-        coordinates1: First set of coordinates (array-like)
-        coordinates2: Second set of coordinates (array-like)
-
-    Note that the two sets of coordinates need to have the same shape.
-    """
-    coordinates1 = coordinates1 - coordinates1.mean(axis=0)
-    coordinates2 = coordinates2 - coordinates2.mean(axis=0)
-    cov = coordinates1.T @ coordinates2
-    return sp.linalg.svd(cov)
-
-
-def relative_orthogonal_transform(coordinates1, coordinates2):
-    """
-    Find the best orthogonal transformation aligning two sets of coordinates for the same nodes
-
-    Args:
-        coordinates1: First set of coordinates (array-like)
-        coordinates2: Second set of coordinates (array-like)
-
-    Note that the two sets of coordinates need to have the same shape.
-    """
-    # Note this is completely equivalent to the approach in
-    # "Closed-Form Solution of Absolute Orientation using Orthonormal Matrices"
-    # Journal of the Optical Society of America A · July 1988
-    U, _, Vh = _cov_svd(coordinates1, coordinates2)
-    return U @ Vh
-
-
-def nearest_orthogonal(mat):
-    """
-    Compute nearest orthogonal matrix to a given input matrix
-
-    Args:
-        mat: input matrix
-    """
-    U, _, Vh = sp.linalg.svd(mat)
-    return U @ Vh
 
 @register_aligner("l2g")
 class L2GAlignmentProblem(AlignmentProblem):
     """
     Implements the standard local2global algorithm using an unweighted patch graph
     """
+
     def __init__(
         self,
-        verbose=False
+        randomized_method: str = "standard",  # "standard", "sparse_aware", "randomized"
+        sketch_method: str = "gaussian",  # "gaussian", "rademacher", "fourier"
+        verbose=False,
     ):
         """
         Initialise the alignment problem with a list of patches
 
         Args:
             verbose(bool): if True print diagnostic information (default: ``False``)
-
+            randomized_method(str): method for eigenvalue decomposition ("standard", "sparse_aware", "randomized")
         """
-        super().__init__(
-            verbose=verbose
-        )
+        super().__init__(verbose=verbose)
+        self.randomized_method = randomized_method
+        self.sketch_method = sketch_method
 
-    def rotate_patches(self, rotations=None):
-        """align the rotation/reflection of all patches
+    def align_patches(self, patch_graph: TGraph, use_scale: bool = True):
+        """
+        Align patches using Local2Global algorithm.
 
         Args:
-            rotations: If provided, apply the given transformations instead of synchronizing patch rotations
+            patch_graph: Pre-computed patch graph with patches as node features and overlap information
+            scale: Whether to perform scale synchronization
+
+        Returns:
+            Self for method chaining
         """
-        if rotations is None:
-            rotations = (rot.T for rot in self.calc_synchronised_rotations())
+        self._register_patches(patch_graph)
 
-        for i, rot in enumerate(rotations):
-            self.patches[i].coordinates = self.patches[i].coordinates @ rot.T
-            # track transformations
-            self.rotations[i] = self.rotations[i] @ rot.T
-            self.shifts[i] = self.shifts[i] @ rot.T
-        return self
-
-    def calc_synchronised_rotations(self):
-        """Compute the orthogonal transformations that best align the patches"""
-        rots = self._transform_matrix(
-            relative_orthogonal_transform, self.dim, symmetric_weights=True
-        )
-        vecs = self._synchronise(rots, blocksize=self.dim, symmetric=True)
-        for mat in vecs:
-            mat[:] = nearest_orthogonal(mat)
-        return vecs
-
-    def translate_patches(self, translations=None):
-        """align the patches by translation
-
-        Args:
-            translations: If provided, apply the given translations instead of synchronizing
-
-        """
-        if translations is None:
-            translations = self.calc_synchronised_translations()
-
-        for i, t in enumerate(translations):
-            self.patches[i].coordinates += t
-            # keep track of transformations
-            self.shifts[i] += t
-        return self
-
-    def calc_synchronised_translations(self):
-        """Compute translations that best align the patches"""
-        b = np.empty((len(self.patch_overlap), self.dim))
-        row = []
-        col = []
-        val = []
-        for i, ((p1, p2), overlap) in enumerate(self.patch_overlap.items()):
-            row.append(i)
-            col.append(p1)
-            val.append(-1)
-            row.append(i)
-            col.append(p2)
-            val.append(1)
-            b[i, :] = np.mean(
-                self.patches[p1].get_coordinates(overlap)
-                - self.patches[p2].get_coordinates(overlap),
-                axis=0,
+        # Special case for 2 patches - use direct Procrustes
+        if self.n_patches == 2:
+            if self.verbose:
+                print("Using optimized Procrustes alignment for 2 patches")
+            self._align_two_patches_procrustes(use_scale)
+        else:
+            # Standard L2G alignment for >2 patches
+            if use_scale:
+                self.scale_patches()
+            self.rotate_patches(
+                method=self.randomized_method, sketch_method=self.sketch_method
             )
-        A = ss.coo_matrix(
-            (val, (row, col)),
-            shape=(len(self.patch_overlap), self.n_patches),
-            dtype=np.int8,
-        )
-        A = A.tocsr()
-        translations = np.empty((self.n_patches, self.dim))
-        for d in range(self.dim):
-            translations[:, d] = lsmr(A, b[:, d], atol=1e-16, btol=1e-16)[0]
-            # TODO: probably doesn't need to be that accurate, this is for testing
-        return translations
+            self.translate_patches()
 
-    def align_patches(self, patches: list[Patch], min_overlap: int | None = None, scale: bool = True):
-        self._register_patches(patches, min_overlap)
-        if scale:
-            self.scale_patches()
-        self.rotate_patches()
-        self.translate_patches()
         self._aligned_embedding = self.mean_embedding()
         return self
+
+    def _align_two_patches_procrustes(self, use_scale: bool = True):
+        """
+        Optimized alignment for exactly 2 patches using direct Procrustes.
+
+        This avoids eigenvalue decomposition issues and is more efficient
+        for the simple 2-patch case.
+        """
+        from scipy.linalg import orthogonal_procrustes
+        import numpy as np
+
+        # Get the overlap nodes between the two patches
+        overlap_key = (0, 1) if (0, 1) in self.patch_overlap else (1, 0)
+        overlap_nodes = self.patch_overlap[overlap_key]
+
+        if len(overlap_nodes) == 0:
+            if self.verbose:
+                print("Warning: No overlap between patches, skipping alignment")
+            return
+
+        # Get overlap indices for each patch
+        patch0_nodes = np.array(self.patches[0].nodes)
+        patch1_nodes = np.array(self.patches[1].nodes)
+
+        # Find indices of overlap nodes in each patch
+        overlap_idx0 = []
+        overlap_idx1 = []
+
+        for node in overlap_nodes:
+            idx0 = np.where(patch0_nodes == node)[0]
+            idx1 = np.where(patch1_nodes == node)[0]
+            if len(idx0) > 0 and len(idx1) > 0:
+                overlap_idx0.append(idx0[0])
+                overlap_idx1.append(idx1[0])
+
+        # Extract overlap embeddings
+        X0 = self.patches[0].coordinates[overlap_idx0]
+        X1 = self.patches[1].coordinates[overlap_idx1]
+
+        if use_scale:
+            # Compute scale factor
+            scale0 = np.linalg.norm(X0, "fro") / X0.shape[0]
+            scale1 = np.linalg.norm(X1, "fro") / X1.shape[0]
+            scale_factor = scale0 / scale1
+            X1_scaled = X1 * scale_factor
+        else:
+            scale_factor = 1.0
+            X1_scaled = X1
+
+        # Solve Procrustes problem: find R such that ||X1_scaled @ R - X0|| is minimized
+        R, _ = orthogonal_procrustes(X1_scaled, X0)
+
+        # Apply transformation to patch 1
+        self.patches[1].coordinates = self.patches[1].coordinates * scale_factor @ R
+
+        # Update transformation tracking
+        self.scales[1] *= scale_factor
+        self.rotations[1] = self.rotations[1] @ R
+
+        # Translate patches to align their centroids on overlap
+        self.translate_patches()
+
+        if self.verbose:
+            # Compute alignment error
+            X1_aligned = self.patches[1].coordinates[overlap_idx1]
+            error = np.linalg.norm(X0 - X1_aligned, "fro") / np.linalg.norm(X0, "fro")
+            print(f"2-patch Procrustes alignment error: {error:.6f}")

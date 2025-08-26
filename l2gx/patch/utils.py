@@ -120,7 +120,7 @@ def transform_error(transforms) -> float:
     deviation over patches.
 
     Args:
-        transforms: List of transformation matrices
+        transforms: list of transformation matrices
 
     Returns:
         Mean standard deviation across transformation elements
@@ -173,7 +173,7 @@ def relative_orthogonal_transform(
 ) -> np.ndarray:
     """Find the best orthogonal transformation aligning two coordinate sets.
 
-    This finds the optimal orthogonal transformation to align coordinates1 with 
+    This finds the optimal orthogonal transformation to align coordinates1 with
     coordinates2 for the same nodes.
 
     Args:
@@ -185,8 +185,8 @@ def relative_orthogonal_transform(
 
     Note:
         The two sets of coordinates need to have the same shape.
-        This is equivalent to the approach in "Closed-Form Solution of Absolute 
-        Orientation using Orthonormal Matrices" (Journal of the Optical Society 
+        This is equivalent to the approach in "Closed-Form Solution of Absolute
+        Orientation using Orthonormal Matrices" (Journal of the Optical Society
         of America A, July 1988).
     """
     u, _, vh = _cov_svd(coordinates1, coordinates2)

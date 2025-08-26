@@ -11,9 +11,14 @@ from pathlib import Path
 import polars as pl
 from torch_geometric.data import Data, InMemoryDataset
 from torch import Tensor
-from typing import Optional, Callable, Tuple, Dict
+from typing import Optional, Callable
 
-from .utils import polars_to_tg, polars_to_raphtory, polars_to_networkx, polars_to_temporal_data
+from .utils import (
+    polars_to_tg,
+    polars_to_raphtory,
+    polars_to_networkx,
+    polars_to_temporal_data,
+)
 
 
 class BaseDataset(InMemoryDataset):
@@ -60,7 +65,7 @@ class BaseDataset(InMemoryDataset):
         """
         return []
 
-    def _load_polars(self) -> Tuple[pl.DataFrame, pl.DataFrame]:
+    def _load_polars(self) -> tuple[pl.DataFrame, pl.DataFrame]:
         """
         Load the processed edge and node Polars DataFrames.
         """
@@ -85,7 +90,7 @@ class BaseDataset(InMemoryDataset):
         graph = polars_to_raphtory(edge_df, node_df)
         return graph
 
-    def _to_torch_geometric(self) -> Tuple[Data, Optional[Dict[str, Tensor]]]:
+    def _to_torch_geometric(self) -> tuple[Data, Optional[dict[str, Tensor]]]:
         """
         Convert the processed edge and node Polars DataFrames to a PyTorch Geometric dataset.
         """
@@ -110,10 +115,10 @@ class BaseDataset(InMemoryDataset):
     def to(self, fmt: str):  # pylint: disable=arguments-renamed
         """
         Convert the dataset to a different format.
-        
+
         Args:
             fmt: Target format ('raphtory', 'polars', 'torch-geometric', 'networkx', 'temporal-data', or device string for torch tensors)
-            
+
         Returns:
             Dataset in the requested format
         """

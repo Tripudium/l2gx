@@ -12,9 +12,9 @@ from .graphsage_embedding import GraphSAGEEmbedding
 from .dgi_embedding import DGIEmbedding
 
 __all__ = [
-    'GAEEmbedding',
-    'VGAEEmbedding', 
-    'SVDEmbedding',
-    'GraphSAGEEmbedding',
-    'DGIEmbedding'
+    "GAEEmbedding",
+    "VGAEEmbedding",
+    "SVDEmbedding",
+    "GraphSAGEEmbedding",
+    "DGIEmbedding",
 ]

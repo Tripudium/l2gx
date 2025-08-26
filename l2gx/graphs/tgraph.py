@@ -175,18 +175,20 @@ class TGraph(Graph):
 
         """
         # Fix: Properly filter edges where both endpoints are in the subgraph
-        node_set = set(nodes.cpu().numpy() if hasattr(nodes, 'cpu') else nodes)
-        
+        node_set = set(nodes.cpu().numpy() if hasattr(nodes, "cpu") else nodes)
+
         # Find all edges where both source and target are in the node set
-        valid_edge_mask = torch.zeros(self.edge_index.shape[1], dtype=torch.bool, device=self.device)
+        valid_edge_mask = torch.zeros(
+            self.edge_index.shape[1], dtype=torch.bool, device=self.device
+        )
         for i in range(self.edge_index.shape[1]):
             src = self.edge_index[0, i].item()
             tgt = self.edge_index[1, i].item()
             if src in node_set and tgt in node_set:
                 valid_edge_mask[i] = True
-        
+
         index = torch.nonzero(valid_edge_mask, as_tuple=True)[0]
-        
+
         # Create mapping from old node IDs to new node IDs
         node_ids = torch.zeros(self.num_nodes, dtype=torch.long, device=self.device)
         node_ids[nodes] = torch.arange(len(nodes), device=self.device)
@@ -248,7 +250,7 @@ class TGraph(Graph):
         return new_id[inverse]
 
     def nodes_in_lcc(self):
-        """List all nodes in the largest connected component"""
+        """list all nodes in the largest connected component"""
         return torch.nonzero(self.connected_component_ids() == 0).flatten()
 
     def to_networkx(self):
@@ -277,7 +279,7 @@ class TGraph(Graph):
             edge_attr=self.edge_attr if self.weighted else None,
             x=self.x,
             y=self.y,
-            num_nodes=self.num_nodes
+            num_nodes=self.num_nodes,
         )
         return data
 

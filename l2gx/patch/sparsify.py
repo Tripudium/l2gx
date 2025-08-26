@@ -1,4 +1,6 @@
-"""Graph sparsification"""
+"""
+Graph sparsification
+"""
 
 import math
 import warnings
@@ -9,7 +11,6 @@ import scipy.sparse
 import scipy.sparse.linalg
 import torch
 import numba
-from tqdm.auto import tqdm
 
 from l2gx.graphs import TGraph, spanning_tree_mask, spanning_tree
 from l2gx.patch.clustering import Partition

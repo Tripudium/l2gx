@@ -9,19 +9,19 @@ from .utils import tg_to_polars
 class CiteSeerDataset(BaseDataset):
     """
     CiteSeer dataset from the Planetoid dataset collection.
-    
+
     The CiteSeer dataset is a citation network of 3,327 scientific publications
     classified into 6 classes. Each node has a 3,703-dimensional feature vector
     indicating word presence/absence. This is a classic benchmark dataset for
     node classification tasks.
-    
+
     Dataset Statistics:
     - Nodes: 3,327
-    - Edges: 9,104  
+    - Edges: 9,104
     - Features: 3,703
     - Classes: 6 (Agents, AI, DB, IR, ML, HCI)
     - Type: Citation network
-    
+
     References:
         "Collective Classification in Network Data"
         Prithviraj Sen, Galileo Namata, Mustafa Bilgic, Lise Getoor, Brian Gallagher, Tina Eliassi-Rad
@@ -31,7 +31,7 @@ class CiteSeerDataset(BaseDataset):
     def __init__(self, root: str | None = None, **kwargs):
         """
         Initialize the CiteSeer dataset.
-        
+
         Args:
             root: Root directory to store the dataset (default: data/)
             **kwargs: Additional arguments passed to Planetoid dataset

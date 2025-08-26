@@ -28,7 +28,7 @@ def get_dataset_info():
             "edges": 5429,
             "features": 1433,
             "classes": 7,
-            "type": "static"
+            "type": "static",
         },
         "CiteSeer": {
             "description": "Citation network dataset",
@@ -36,7 +36,7 @@ def get_dataset_info():
             "edges": 9104,
             "features": 3703,
             "classes": 6,
-            "type": "static"
+            "type": "static",
         },
         "PubMed": {
             "description": "Citation network dataset (PubMed abstracts)",
@@ -44,21 +44,21 @@ def get_dataset_info():
             "edges": 88648,
             "features": 500,
             "classes": 3,
-            "type": "static"
+            "type": "static",
         },
         "as-733": {
             "description": "Autonomous systems temporal network",
             "nodes": 7716,
             "edges": 45645,
             "snapshots": 733,
-            "type": "temporal"
+            "type": "temporal",
         },
         "DGraph": {
             "description": "Financial fraud detection graph",
             "nodes": "~3M",
             "edges": "~4M",
             "features": "multiple",
-            "type": "static"
+            "type": "static",
         },
         "Elliptic": {
             "description": "Bitcoin transaction illicit detection",
@@ -66,23 +66,23 @@ def get_dataset_info():
             "edges": 234355,
             "features": 166,
             "classes": 3,
-            "type": "static"
+            "type": "static",
         },
         "MAG240M": {
             "description": "Academic citation heterogeneous graph",
             "nodes": "244M+",
             "edges": "1.7B+",
             "features": "various",
-            "type": "heterogeneous"
+            "type": "heterogeneous",
         },
         "ORBITAAL": {
             "description": "Bitcoin temporal transaction graph",
             "nodes": "252M (sample: 1K)",
-            "edges": "785M (sample: 5K)", 
+            "edges": "785M (sample: 5K)",
             "features": "temporal, anomaly_labels",
             "classes": "anomaly detection",
-            "type": "temporal"
-        }
+            "type": "temporal",
+        },
     }
 
 

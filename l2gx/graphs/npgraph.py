@@ -248,7 +248,7 @@ class NPGraph(Graph):
         return self._jitgraph.connected_component_ids()
 
     def nodes_in_lcc(self):
-        """List all nodes in the largest connected component"""
+        """list all nodes in the largest connected component"""
         return np.flatnonzero(self.connected_component_ids() == 0)
 
     def bfs_order(self, start=0):
@@ -526,7 +526,7 @@ class JitGraph:
         return inverse[components]
 
     def nodes_in_lcc(self):
-        """List all nodes in the largest connected component"""
+        """list all nodes in the largest connected component"""
         return np.flatnonzero(self.connected_component_ids() == 0)
 
     @property

@@ -21,7 +21,7 @@ def _fennel_clustering(
 ):
     """
     FENNEL single-pass graph clustering algorithm
-    
+
     Args:
         edge_index: Edge index array [2, num_edges]
         adj_index: Adjacency index for fast neighbor lookup
@@ -32,7 +32,7 @@ def _fennel_clustering(
         gamma: Gamma parameter (default: 1.5)
         num_iters: Number of iterations (default: 1)
         clusters: Input clustering to refine (optional)
-    
+
     Returns:
         Cluster assignment array
     """
@@ -96,17 +96,17 @@ def _fennel_clustering(
 
 
 def fennel_clustering(
-        graph: TGraph,
-        num_clusters: int,
-        load_limit: float = 1.1,
-        alpha: float = None,
-        gamma: float = 1.5,
-        num_iters: int = 1,
-        verbose: bool = True
-    ) -> np.ndarray:
+    graph: TGraph,
+    num_clusters: int,
+    load_limit: float = 1.1,
+    alpha: float = None,
+    gamma: float = 1.5,
+    num_iters: int = 1,
+    verbose: bool = True,
+) -> np.ndarray:
     """
     Wrapper for Fennel clustering that handles progress reporting.
-    
+
     Args:
         graph: Input graph (TGraph object)
         num_clusters: Target number of clusters
@@ -115,7 +115,7 @@ def fennel_clustering(
         gamma: Gamma parameter (default: 1.5)
         num_iters: Number of iterations (default: 1)
         verbose: Whether to print progress info (default: True)
-    
+
     Returns:
         Cluster assignment array
     """
@@ -124,8 +124,10 @@ def fennel_clustering(
     num_nodes = graph.num_nodes
 
     if verbose:
-        print(f"Starting Fennel clustering: {num_nodes} nodes → {num_clusters} clusters")
-    
+        print(
+            f"Starting Fennel clustering: {num_nodes} nodes → {num_clusters} clusters"
+        )
+
     # Run the core algorithm without progress bars
     clusters = _fennel_clustering(
         edge_index=edge_index,
@@ -135,12 +137,12 @@ def fennel_clustering(
         load_limit=load_limit,
         alpha=alpha,
         gamma=gamma,
-        num_iters=num_iters
+        num_iters=num_iters,
     )
-    
+
     if verbose:
         unique_clusters = len(np.unique(clusters[clusters >= 0]))
         cluster_sizes = np.bincount(clusters[clusters >= 0])
         print(f"Fennel completed: {unique_clusters} clusters, sizes: {cluster_sizes}")
-    
+
     return clusters

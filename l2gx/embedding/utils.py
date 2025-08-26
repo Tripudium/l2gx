@@ -18,7 +18,7 @@ import torch
 
 class EarlyStopping:
     """Early stopping utility for training with model state management."""
-    
+
     def __init__(self, patience=10, min_delta=0, save_best_model=True):
         self.patience = patience
         self.min_delta = min_delta
@@ -26,13 +26,13 @@ class EarlyStopping:
         self.best_loss = None
         self.save_best_model = save_best_model
         self._temp_file = None
-        
+
         if self.save_best_model:
             self._temp_file = tempfile.NamedTemporaryFile(delete=False)
-        
+
     def __call__(self, val_loss, model=None):
         improved = False
-        
+
         if self.best_loss is None:
             self.best_loss = val_loss
             improved = True
@@ -42,25 +42,26 @@ class EarlyStopping:
             improved = True
         else:
             self.counter += 1
-            
+
         # Save best model state if improved
         if improved and self.save_best_model and model is not None:
             torch.save(model.state_dict(), self._temp_file.name)
-            
+
         # Check if we should stop
         should_stop = self.counter >= self.patience
-        
+
         # Restore best model if stopping
         if should_stop and self.save_best_model and model is not None:
             model.load_state_dict(torch.load(self._temp_file.name))
-            
+
         return should_stop
-    
+
     def __del__(self):
         # Clean up temporary file
         if self._temp_file is not None:
             try:
                 import os
+
                 os.unlink(self._temp_file.name)
             except:
                 pass
@@ -68,15 +69,15 @@ class EarlyStopping:
 
 def convert_graph_format(
     graph: Union[Data, nx.Graph, sp.spmatrix, np.ndarray],
-    target_format: Literal['torch_geometric', 'networkx', 'scipy_sparse', 'numpy']
+    target_format: Literal["torch_geometric", "networkx", "scipy_sparse", "numpy"],
 ) -> Union[Data, nx.Graph, sp.spmatrix, np.ndarray]:
     """
     Convert graph between different formats.
-    
+
     Args:
         graph: Input graph in any supported format
         target_format: Target format to convert to
-        
+
     Returns:
         Graph in the target format
     """
@@ -95,21 +96,21 @@ def convert_graph_format(
         node_features = None
     else:
         raise TypeError(f"Unsupported input graph type: {type(graph)}")
-    
+
     # Now convert to target format
-    if target_format == 'scipy_sparse':
+    if target_format == "scipy_sparse":
         return adj_matrix
-    if target_format == 'numpy':
+    if target_format == "numpy":
         return adj_matrix.toarray()
-    if target_format == 'networkx':
+    if target_format == "networkx":
         return nx.from_scipy_sparse_array(adj_matrix)
-    if target_format == 'torch_geometric':
+    if target_format == "torch_geometric":
         edge_index, edge_attr = from_scipy_sparse_matrix(adj_matrix)
-        data = Data(edge_index=edge_index, edge_attr=edge_attr, num_nodes=adj_matrix.shape[0])
+        data = Data(
+            edge_index=edge_index, edge_attr=edge_attr, num_nodes=adj_matrix.shape[0]
+        )
         if node_features is not None:
             data.x = node_features
         return data
-    
+
     raise ValueError(f"Unsupported target format: {target_format}")
-
-

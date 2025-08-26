@@ -14,26 +14,29 @@ Main classes:
 
 Registry functions:
 - get_embedding: Create embedding instances by name
-- list_embeddings: List available embedding methods
+- list_embeddings: list available embedding methods
 """
 
 from .base import GraphEmbedding, InductiveGraphEmbedding, TransductiveGraphEmbedding
-from .registry import (
-    register_embedding, 
-    get_embedding, 
-    list_embeddings
-)
+from .registry import register_embedding, get_embedding, list_embeddings
 
-from .methods import GAEEmbedding, VGAEEmbedding, SVDEmbedding, GraphSAGEEmbedding, DGIEmbedding
+from .methods import (
+    GAEEmbedding,
+    VGAEEmbedding,
+    SVDEmbedding,
+    GraphSAGEEmbedding,
+    DGIEmbedding,
+)
 from .patched_embedding import PatchedEmbedding
-from .supervised_patch_embedding import SupervisedPatchedEmbedding
+
+# from .supervised_patch_embedding import SupervisedPatchedEmbedding  # Temporarily disabled
 from .train import train_gae
 from .utils import convert_graph_format
 
 __all__ = [
     # Unified embedding interface
     "GraphEmbedding",
-    "InductiveGraphEmbedding", 
+    "InductiveGraphEmbedding",
     "TransductiveGraphEmbedding",
     "GAEEmbedding",
     "VGAEEmbedding",
@@ -41,7 +44,7 @@ __all__ = [
     "GraphSAGEEmbedding",
     "DGIEmbedding",
     "PatchedEmbedding",
-    "SupervisedPatchedEmbedding",
+    # "SupervisedPatchedEmbedding",  # Temporarily disabled
     "get_embedding",
     "list_embeddings",
     "register_embedding",

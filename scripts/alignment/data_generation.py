@@ -5,24 +5,26 @@ Code based on https://github.com/LJeub/Local2Global/blob/master/local2global/exa
 
 import argparse
 import csv
+import warnings
+from collections import Counter
 from copy import copy
 from os import path
-from collections import Counter
 from pathlib import Path
 from statistics import mean
 
-import numpy as np
 import matplotlib.pyplot as plt
-from scipy.spatial.distance import cdist
-from scipy.spatial import procrustes
-from sklearn.cluster import KMeans
 import networkx as nx
+import numpy as np
 import torch
+from scipy.spatial import procrustes
+from scipy.spatial.distance import cdist
+from sklearn.cluster import KMeans
+from sklearn.decomposition import PCA
 
-from l2gx.patch import Patch
 from l2gx.align import AlignmentProblem, GeoAlignmentProblem, procrustes_error
-from l2gx.utils import ensure_extension
 from l2gx.graphs import TGraph
+from l2gx.patch import Patch
+from l2gx.utils import ensure_extension
 
 rg = np.random.default_rng()
 
@@ -75,7 +77,7 @@ def generate_points(
 
     list_of_clusters = [
         rg.normal(scale=1, size=(s, dim)) * v + shift
-        for shift, v, s in zip(list_shifts, list_var, list_sizes)
+        for shift, v, s in zip(list_shifts, list_var, list_sizes, strict=False)
     ]
     return np.vstack(list_of_clusters)
 
@@ -257,7 +259,7 @@ def add_noise(patches: list[Patch], noise_level=1, scales=None):
     if noise_level > 0:
         if scales is None:
             scales = np.ones(len(patches))
-        for patch, scale in zip(patches, scales):
+        for patch, scale in zip(patches, scales, strict=False):
             noise = rg.normal(loc=0, scale=noise_level * scale, size=patch.shape)
             patch.coordinates += noise
     return patches
@@ -307,12 +309,60 @@ def noise_profile(noise_levels, aligner, points, patches):
     return errors
 
 
-def plot_patches(patches, transformed_patches=None):
+def plot_patches(patches, transformed_patches=None, save_file=None, umap_params=None):
     """
-    Plot the original and transformed patches
+    Plot the original and transformed patches.
+
+    For 2D data, uses direct scatter plots.
+    For higher-dimensional data, uses PCA dimensionality reduction.
+
+    Args:
+        patches: list of original patches
+        transformed_patches: list of transformed patches (optional)
+        save_file: Path to save the plot (optional)
+        umap_params: Unused parameter (kept for backwards compatibility)
     """
     if transformed_patches is None:
         transformed_patches = patches
+
+    # Check dimensionality
+    dim = patches[0].coordinates.shape[1]
+
+    if dim == 2:
+        # Use original 2D plotting
+        _plot_patches_2d(patches, transformed_patches, save_file)
+    elif dim > 2:
+        # Use PCA for higher dimensional data
+        _plot_patches_pca(patches, transformed_patches, save_file)
+    else:
+        raise ValueError(f"Cannot plot {dim}-dimensional data")
+
+
+def _plot_patches_2d(patches, transformed_patches, save_file):
+    """Original 2D plotting function with Procrustes alignment"""
+    # Apply Procrustes alignment to transformed patches for visual comparison
+    all_original_coords = np.vstack([patch.coordinates for patch in patches])
+    all_transformed_coords = np.vstack(
+        [patch.coordinates for patch in transformed_patches]
+    )
+
+    _, all_transformed_coords_aligned, _ = procrustes(
+        all_original_coords, all_transformed_coords
+    )
+
+    # Reconstruct aligned patches
+    aligned_patches = []
+    start_idx = 0
+    for i, patch in enumerate(transformed_patches):
+        patch_size = len(patch.coordinates)
+        end_idx = start_idx + patch_size
+        aligned_coords = all_transformed_coords_aligned[start_idx:end_idx]
+
+        # Create a copy of the patch with aligned coordinates
+        aligned_patch = type(patch)(patch.nodes, aligned_coords)
+        aligned_patches.append(aligned_patch)
+        start_idx = end_idx
+
     _, (ax1, ax2) = plt.subplots(1, 2, figsize=(20, 8))
     colors = plt.get_cmap("rainbow")(np.linspace(0, 1, len(patches)))
 
@@ -329,8 +379,8 @@ def plot_patches(patches, transformed_patches=None):
     ax1.set_ylabel("Y Coordinate")
     ax1.legend(bbox_to_anchor=(1.05, 1), loc="upper left")
 
-    # Plot transformed patches on the right subplot
-    for i, patch in enumerate(transformed_patches):
+    # Plot Procrustes-aligned transformed patches on the right subplot
+    for i, patch in enumerate(aligned_patches):
         ax2.scatter(
             patch.coordinates[:, 0],
             patch.coordinates[:, 1],
@@ -338,7 +388,7 @@ def plot_patches(patches, transformed_patches=None):
             alpha=0.5,
             label=f"Patch {i + 1}",
         )
-    ax2.set_title("Transformed Patches")
+    ax2.set_title("Transformed Patches (Procrustes-aligned)")
     ax2.set_xlabel("X Coordinate")
     ax2.set_ylabel("Y Coordinate")
     ax2.legend(bbox_to_anchor=(1.05, 1), loc="upper left")
@@ -348,7 +398,101 @@ def plot_patches(patches, transformed_patches=None):
     ax2.set_aspect("equal", adjustable="box")
 
     plt.tight_layout()
-    plt.show()
+    if save_file is not None:
+        plt.savefig(save_file)
+    else:
+        plt.show()
+
+
+def _plot_patches_pca(patches, transformed_patches, save_file):
+    """PCA-based plotting for higher dimensional data"""
+    # Suppress common warnings during PCA visualization
+    with warnings.catch_warnings():
+        warnings.filterwarnings("ignore", category=FutureWarning, module="sklearn")
+
+        # Combine all coordinates from all patches to get a comprehensive embedding
+        all_original_coords = []
+        all_transformed_coords = []
+        patch_labels_original = []
+        patch_labels_transformed = []
+
+        for i, patch in enumerate(patches):
+            all_original_coords.append(patch.coordinates)
+            patch_labels_original.extend([i] * len(patch.coordinates))
+
+        for i, patch in enumerate(transformed_patches):
+            all_transformed_coords.append(patch.coordinates)
+            patch_labels_transformed.extend([i] * len(patch.coordinates))
+
+        # Stack all coordinates
+        all_original_coords = np.vstack(all_original_coords)
+        all_transformed_coords = np.vstack(all_transformed_coords)
+        patch_labels_original = np.array(patch_labels_original)
+        patch_labels_transformed = np.array(patch_labels_transformed)
+
+        # Apply Procrustes alignment to transformed patches before PCA
+        # This ensures the two embeddings are visually comparable
+        _, all_transformed_coords_aligned, _ = procrustes(
+            all_original_coords, all_transformed_coords
+        )
+
+        # Combine original and Procrustes-aligned transformed data to ensure consistent PCA embedding
+        combined_coords = np.vstack(
+            [all_original_coords, all_transformed_coords_aligned]
+        )
+
+        # Fit PCA on combined data for consistent embedding space
+        pca = PCA(n_components=2, random_state=42)
+        combined_embedding = pca.fit_transform(combined_coords)
+
+        # Split back into original and transformed embeddings
+        n_original = len(all_original_coords)
+        original_embedding = combined_embedding[:n_original]
+        transformed_embedding = combined_embedding[n_original:]
+
+    # Create plots
+    _, (ax1, ax2) = plt.subplots(1, 2, figsize=(20, 8))
+    colors = plt.get_cmap("rainbow")(np.linspace(0, 1, len(patches)))
+
+    # Plot original patches
+    for i in range(len(patches)):
+        mask = patch_labels_original == i
+        ax1.scatter(
+            original_embedding[mask, 0],
+            original_embedding[mask, 1],
+            color=colors[i],
+            alpha=0.5,
+            label=f"Patch {i + 1}",
+        )
+    ax1.set_title("Original Patches (PCA)")
+    ax1.set_xlabel(f"PC1 ({pca.explained_variance_ratio_[0]:.1%} variance)")
+    ax1.set_ylabel(f"PC2 ({pca.explained_variance_ratio_[1]:.1%} variance)")
+    ax1.legend(bbox_to_anchor=(1.05, 1), loc="upper left")
+
+    # Plot transformed patches
+    for i in range(len(transformed_patches)):
+        mask = patch_labels_transformed == i
+        ax2.scatter(
+            transformed_embedding[mask, 0],
+            transformed_embedding[mask, 1],
+            color=colors[i],
+            alpha=0.5,
+            label=f"Patch {i + 1}",
+        )
+    ax2.set_title("Transformed Patches (PCA, Procrustes-aligned)")
+    ax2.set_xlabel(f"PC1 ({pca.explained_variance_ratio_[0]:.1%} variance)")
+    ax2.set_ylabel(f"PC2 ({pca.explained_variance_ratio_[1]:.1%} variance)")
+    ax2.legend(bbox_to_anchor=(1.05, 1), loc="upper left")
+
+    # set equal aspect ratio for both plots
+    ax1.set_aspect("equal", adjustable="box")
+    ax2.set_aspect("equal", adjustable="box")
+
+    plt.tight_layout()
+    if save_file is not None:
+        plt.savefig(save_file)
+    else:
+        plt.show()
 
 
 def plot_reconstruction(
@@ -556,7 +700,7 @@ def main(arguments: argparse.Namespace):
             raise RuntimeError("plotting reconstruction error only works for dim=2")
         noisy_problem = copy(base_problem)
         add_noise(noisy_problem, noise_level=noise, scales=scales)
-        for problem_cls, label in zip(problem_types, labels):
+        for problem_cls, label in zip(problem_types, labels, strict=False):
             plt.figure()
             problem = copy(noisy_problem)
             problem.__class__ = problem_cls
