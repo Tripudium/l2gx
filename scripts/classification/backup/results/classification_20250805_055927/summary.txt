@@ -1,0 +1,17 @@
+NODE CLASSIFICATION RESULTS
+==================================================
+
+Embedding Configuration:
+  Method: vgae
+  Dimension: 128
+  Alignment: l2g
+
+Classification Configuration:
+  Classifier: logistic_regression
+  Feature scaling: True
+
+Results:
+  Test Accuracy: 0.7417
+  Test F1 (macro): 0.7180
+  Test F1 (weighted): 0.7407
+  CV Accuracy: 0.7289 (+/- 0.0207)

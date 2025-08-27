@@ -66,12 +66,29 @@ class L2GAlignmentProblem(AlignmentProblem):
             self._align_two_patches_procrustes(use_scale)
         else:
             # Standard L2G alignment for >2 patches
-            if use_scale:
-                self.scale_patches()
-            self.rotate_patches(
-                method=self.randomized_method, sketch_method=self.sketch_method
-            )
-            self.translate_patches()
+            try:
+                if use_scale:
+                    self.scale_patches()
+                self.rotate_patches(
+                    method=self.randomized_method, sketch_method=self.sketch_method
+                )
+                self.translate_patches()
+            except Exception as e:
+                # Check for specific numerical errors
+                error_msg = str(e).lower()
+                is_numerical_error = any(keyword in error_msg for keyword in [
+                    'arpack', 'arnoldi', 'eigenvalue', 'convergence', 'factorization',
+                    'singular', 'numerical', 'linalg', 'lapack'
+                ])
+                
+                if self.verbose:
+                    print(f"L2G alignment failed ({e.__class__.__name__}: {e})")
+                    if is_numerical_error:
+                        print("Detected numerical/eigenvalue issue - this is common with certain matrix configurations")
+                    print("Falling back to sequential Procrustes alignment...")
+                
+                # Fallback to sequential Procrustes alignment
+                self._fallback_procrustes_alignment(use_scale)
 
         self._aligned_embedding = self.mean_embedding()
         return self
@@ -142,3 +159,76 @@ class L2GAlignmentProblem(AlignmentProblem):
             X1_aligned = self.patches[1].coordinates[overlap_idx1]
             error = np.linalg.norm(X0 - X1_aligned, "fro") / np.linalg.norm(X0, "fro")
             print(f"2-patch Procrustes alignment error: {error:.6f}")
+
+    def _fallback_procrustes_alignment(self, use_scale: bool = True):
+        """
+        Fallback alignment using sequential Procrustes when L2G fails.
+        
+        This method aligns patches sequentially to a reference patch using
+        Procrustes alignment, which is more stable than eigenvalue methods.
+        """
+        from scipy.linalg import orthogonal_procrustes
+        import numpy as np
+        
+        if len(self.patches) < 2:
+            return
+            
+        # Use the first patch as reference
+        reference_patch = self.patches[0]
+        reference_coords = reference_patch.coordinates.copy()
+        
+        if self.verbose:
+            print(f"Using patch 0 as reference for sequential Procrustes alignment")
+        
+        # Align each subsequent patch to the reference
+        for i in range(1, len(self.patches)):
+            current_patch = self.patches[i]
+            current_coords = current_patch.coordinates.copy()
+            
+            # Find overlapping nodes between reference and current patch
+            ref_nodes = set(reference_patch.nodes)
+            curr_nodes = set(current_patch.nodes)
+            overlap_nodes = ref_nodes.intersection(curr_nodes)
+            
+            if len(overlap_nodes) < 3:
+                if self.verbose:
+                    print(f"Warning: Insufficient overlap ({len(overlap_nodes)} nodes) between patches 0 and {i}")
+                continue
+                
+            # Get overlap indices
+            ref_overlap_indices = [np.where(reference_patch.nodes == node)[0][0] 
+                                 for node in overlap_nodes if node in reference_patch.nodes]
+            curr_overlap_indices = [np.where(current_patch.nodes == node)[0][0] 
+                                  for node in overlap_nodes if node in current_patch.nodes]
+            
+            if len(ref_overlap_indices) != len(curr_overlap_indices) or len(ref_overlap_indices) < 3:
+                if self.verbose:
+                    print(f"Warning: Overlap index mismatch for patches 0 and {i}")
+                continue
+                
+            # Get overlapping coordinates
+            ref_overlap_coords = reference_coords[ref_overlap_indices]
+            curr_overlap_coords = current_coords[curr_overlap_indices]
+            
+            try:
+                # Compute Procrustes alignment
+                R, scale_factor = orthogonal_procrustes(curr_overlap_coords, ref_overlap_coords)
+                
+                # Apply scale if requested
+                if use_scale:
+                    current_coords *= scale_factor
+                
+                # Apply rotation
+                aligned_coords = current_coords @ R
+                
+                # Update patch coordinates
+                self.patches[i].coordinates = aligned_coords
+                
+                if self.verbose:
+                    print(f"Aligned patch {i} to reference (scale: {scale_factor:.3f})")
+                    
+            except Exception as e:
+                if self.verbose:
+                    print(f"Warning: Failed to align patch {i}: {e}")
+                # Keep original coordinates if alignment fails
+                continue

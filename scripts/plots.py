@@ -1,13 +1,50 @@
 """
-Plotting functions
+Plotting functions for L2GX.
+
+This module provides plotting utilities for:
+- Patch graph visualization
+- UMAP embeddings with datashader
 """
+
+import warnings
+from pathlib import Path
 
 import matplotlib.colors as mcolors
 import matplotlib.pyplot as plt
 import networkx as nx
 import numpy as np
+from matplotlib.backends.backend_pdf import PdfPages
+
+# Suppress warnings for cleaner output
+warnings.filterwarnings("ignore", category=FutureWarning)
+warnings.filterwarnings("ignore", category=UserWarning)
 
 from l2gx.graphs import TGraph
+
+# Optional imports for UMAP plotting
+try:
+    import umap
+    UMAP_AVAILABLE = True
+except ImportError:
+    UMAP_AVAILABLE = False
+
+try:
+    import datashader as ds
+    import datashader.transfer_functions as tf
+    DATASHADER_AVAILABLE = True
+except ImportError:
+    DATASHADER_AVAILABLE = False
+
+try:
+    import polars as pl
+    POLARS_AVAILABLE = True
+except ImportError:
+    POLARS_AVAILABLE = False
+    try:
+        import pandas as pd
+        PANDAS_AVAILABLE = True
+    except ImportError:
+        PANDAS_AVAILABLE = False
 
 
 def plot_patch_graph(
@@ -312,3 +349,294 @@ def plot_patch_graph(
         plt.show()
 
     return fig
+
+
+def plot_datashader_umap(
+    embedding: np.ndarray,
+    labels: np.ndarray | None = None,
+    title: str | None = None,
+    save_path: str | Path | None = None,
+    umap_params: dict | None = None,
+    datashader_params: dict | None = None,
+    colors: list[str] | None = None,
+    figsize: tuple[float, float] = (8, 8),
+    dpi: int = 150,
+    show_plot: bool = True,
+    verbose: bool = True,
+    enhance_visibility: bool = True,
+) -> tuple[plt.Figure, np.ndarray]:
+    """
+    Create a high-quality UMAP visualization using datashader.
+
+    This function creates publication-quality UMAP plots similar to l2g_embeddings.pdf,
+    using datashader for better handling of overlapping points and large datasets.
+
+    Parameters
+    ----------
+    embedding : np.ndarray
+        The embedding matrix of shape (n_samples, n_features).
+    labels : np.ndarray, optional
+        Class labels for each sample. If None, all points are treated as one class.
+    title : str, optional
+        Title for the plot.
+    save_path : str or Path, optional
+        Path to save the plot (supports .pdf, .png, .jpg).
+    umap_params : dict, optional
+        Parameters for UMAP. Default: {'n_neighbors': 15, 'min_dist': 0.1, 'random_state': 42}
+    datashader_params : dict, optional
+        Parameters for datashader. Default: {'width': 600, 'height': 600}
+    colors : list of str, optional
+        List of hex colors for classes. If None, uses default bright colors.
+    figsize : tuple, optional
+        Figure size in inches. Default: (8, 8)
+    dpi : int, optional
+        DPI for the saved figure. Default: 150
+    show_plot : bool, optional
+        Whether to display the plot. Default: True
+    verbose : bool, optional
+        Whether to print progress messages. Default: True
+    enhance_visibility : bool, optional
+        Whether to enhance point visibility by adding multiple points per sample. Default: True
+
+    Returns
+    -------
+    fig : matplotlib.figure.Figure
+        The matplotlib figure object.
+    umap_coords : np.ndarray
+        The 2D UMAP coordinates of shape (n_samples, 2).
+
+    Examples
+    --------
+    >>> from l2gx.embedding import get_embedding
+    >>> from l2gx.datasets import get_dataset
+    >>> from scripts.plots import plot_datashader_umap
+    >>>
+    >>> # Get embedding
+    >>> dataset = get_dataset("Cora")
+    >>> embedder = get_embedding("vgae", embedding_dim=64)
+    >>> embedding = embedder.fit_transform(dataset.to("torch-geometric"))
+    >>>
+    >>> # Create plot
+    >>> fig, coords = plot_datashader_umap(
+    ...     embedding,
+    ...     labels=dataset.y,
+    ...     title="Cora VGAE Embeddings",
+    ...     save_path="cora_umap.pdf"
+    ... )
+    """
+
+    # Check requirements
+    if not UMAP_AVAILABLE:
+        raise ImportError(
+            "UMAP is not available. Please install it with: pip install umap-learn"
+        )
+    if not DATASHADER_AVAILABLE:
+        raise ImportError(
+            "Datashader is not available. Please install it with: pip install datashader"
+        )
+    if not POLARS_AVAILABLE and not PANDAS_AVAILABLE:
+        raise ImportError(
+            "Neither polars nor pandas is available. Please install one: pip install polars"
+        )
+
+    if verbose:
+        print(f"Creating UMAP visualization for embedding of shape {embedding.shape}")
+
+    # Handle labels
+    if labels is None:
+        labels = np.zeros(len(embedding), dtype=int)
+    else:
+        labels = np.asarray(labels)
+
+    # Set default parameters to match l2g_embeddings.pdf exactly
+    if umap_params is None:
+        umap_params = {
+            'n_neighbors': 5,    # Fewer neighbors for more spread (matches original)
+            'min_dist': 0.5,     # Larger minimum distance for more spread (matches original)
+            'spread': 2.0,       # Increase spread parameter (matches original)
+            'random_state': 42,
+            'n_components': 2,
+        }
+
+    if datashader_params is None:
+        datashader_params = {
+            'width': 400,        # Smaller canvas for enhanced visibility (matches original)
+            'height': 400,       # Smaller canvas for enhanced visibility (matches original)
+        }
+
+    # Default colors (bright and vibrant)
+    if colors is None:
+        colors = [
+            "#0080FF",  # Blue
+            "#FF8000",  # Orange
+            "#00C000",  # Green
+            "#FF4040",  # Red
+            "#8040FF",  # Purple
+            "#C0C000",  # Yellow
+            "#FF4080",  # Pink
+            "#00C0C0",  # Cyan
+            "#804040",  # Brown
+            "#408040",  # Dark green
+        ]
+
+    # Step 1: Compute UMAP embedding
+    if verbose:
+        print("Computing UMAP embedding...")
+
+    reducer = umap.UMAP(**umap_params)
+    umap_coords = reducer.fit_transform(embedding)
+
+    if verbose:
+        print(f"UMAP complete. Coordinates shape: {umap_coords.shape}")
+
+    # Step 2: Create DataFrame for datashader
+    if enhance_visibility:
+        # Create multiple points per sample for enhanced visibility
+        df = _create_enhanced_dataframe(umap_coords, labels)
+    else:
+        # Simple DataFrame
+        df = _create_simple_dataframe(umap_coords, labels)
+
+    # Step 3: Create datashader image
+    if verbose:
+        print("Creating datashader visualization...")
+
+    # Create canvas
+    canvas = ds.Canvas(
+        plot_width=datashader_params['width'],
+        plot_height=datashader_params['height'],
+        x_range=(df['x'].min(), df['x'].max()),
+        y_range=(df['y'].min(), df['y'].max()),
+    )
+
+    # Convert to pandas for datashader if using polars
+    if POLARS_AVAILABLE and isinstance(df, pl.DataFrame):
+        df_pandas = df.to_pandas()
+    else:
+        df_pandas = df
+
+    # Aggregate points by class
+    agg = canvas.points(df_pandas, 'x', 'y', ds.count_cat('class'))
+
+    # Create color mapping
+    n_classes = len(np.unique(labels))
+    color_map = {str(i): colors[i % len(colors)] for i in range(n_classes)}
+
+    # Shade the image
+    img = tf.shade(
+        agg,
+        color_key=color_map,
+        how='log',  # Log scale for better visibility
+        alpha=255,  # Full opacity
+    )
+
+    # Set white background
+    img = tf.set_background(img, 'white')
+
+    # Step 4: Create matplotlib figure
+    fig, ax = plt.subplots(figsize=figsize, dpi=dpi)
+
+    # Convert datashader image to numpy array
+    img_array = np.array(img.to_pil())
+
+    # Display the image
+    ax.imshow(img_array, aspect='equal', interpolation='nearest')
+    ax.axis('off')
+    ax.set_xticks([])
+    ax.set_yticks([])
+
+    # Remove all margins and padding for clean plot
+    plt.subplots_adjust(left=0, right=1, top=1, bottom=0, wspace=0, hspace=0)
+
+    # Step 5: Save if requested
+    if save_path:
+        save_path = Path(save_path)
+        if verbose:
+            print(f"Saving plot to {save_path}")
+
+        if save_path.suffix == '.pdf':
+            # Save as PDF without any padding or text
+            with PdfPages(save_path) as pdf:
+                pdf.savefig(fig, bbox_inches='tight', pad_inches=0, dpi=300)
+        else:
+            # Save as image without any padding 
+            fig.savefig(save_path, bbox_inches='tight', pad_inches=0, dpi=dpi)
+
+    # Step 6: Show if requested
+    if show_plot:
+        plt.show()
+    else:
+        plt.close(fig)
+
+    return fig, umap_coords
+
+
+def _create_enhanced_dataframe(coords: np.ndarray, labels: np.ndarray):
+    """Create DataFrame with enhanced points for better visibility."""
+
+    expanded_data = []
+
+    # Offset points matching create_pdf.py exactly for thick, visible points
+    offsets = [
+        (0.02, 0),
+        (-0.02, 0),
+        (0, 0.02),
+        (0, -0.02),
+        (0.01, 0.01),
+        (-0.01, 0.01),
+        (0.01, -0.01),
+        (-0.01, -0.01),
+        (0.015, 0),
+        (-0.015, 0),
+        (0, 0.015),
+        (0, -0.015),
+    ]
+
+    for i in range(len(coords)):
+        x, y = coords[i]
+        label = labels[i]
+
+        # Add the original point
+        expanded_data.append([x, y, str(label)])
+
+        # Add nearby points for enhanced visibility (matches create_pdf.py)
+        for dx, dy in offsets:
+            expanded_data.append([
+                x + dx,
+                y + dy,
+                str(label)  # Convert to string for categorical
+            ])
+
+    # Create DataFrame (prefer polars for performance)
+    if POLARS_AVAILABLE:
+        df = pl.DataFrame(
+            expanded_data,
+            schema=["x", "y", "class"],
+            orient="row"
+        )
+        # Convert class to categorical
+        df = df.with_columns(pl.col("class").cast(pl.Categorical))
+    else:
+        df = pd.DataFrame(expanded_data, columns=["x", "y", "class"])
+        df["class"] = df["class"].astype('category')
+
+    return df
+
+
+def _create_simple_dataframe(coords: np.ndarray, labels: np.ndarray):
+    """Create simple DataFrame without enhancement."""
+
+    data = {
+        'x': coords[:, 0],
+        'y': coords[:, 1],
+        'class': labels.astype(str),
+    }
+
+    if POLARS_AVAILABLE:
+        df = pl.DataFrame(data)
+        df = df.with_columns(pl.col("class").cast(pl.Categorical))
+    else:
+        df = pd.DataFrame(data)
+        df["class"] = df["class"].astype('category')
+
+    return df

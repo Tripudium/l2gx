@@ -1,0 +1,30 @@
+PUBMED_SIMPLE_TEST REPORT
+================================================================================
+
+Experiment Date: 2025-08-05 09:12:39
+Description: Simple PubMed test with reduced epochs
+
+CONFIGURATION:
+  Dataset: PubMed (19717 nodes, 3 classes)
+  Dimensions: [8, 16, 32]
+  Runs per configuration: 1
+  Test size: 0.2
+
+METHODS:
+  full_graph: VGAE applied to entire graph
+  hierarchical_l2g: Binary tree hierarchical with Procrustes alignment
+
+SUMMARY RESULTS:
+             method  embedding_dim  accuracy_mean  accuracy_std  accuracy_count  embedding_time_mean  embedding_time_std  total_time_mean  total_time_std
+0        full_graph              8         0.5345           NaN               1               5.6427                 NaN           5.8390             NaN
+1        full_graph             16         0.6897           NaN               1               6.8676                 NaN           7.1921             NaN
+2        full_graph             32         0.7472           NaN               1               9.2785                 NaN           9.8011             NaN
+3  hierarchical_l2g              8         0.4724           NaN               1              63.8807                 NaN          63.8999             NaN
+4  hierarchical_l2g             16         0.4855           NaN               1              82.9349                 NaN          82.9625             NaN
+5  hierarchical_l2g             32         0.5396           NaN               1             104.0127                 NaN         104.0510             NaN
+
+BEST RESULTS BY METHOD:
+  full_graph: 0.7472 ± nan at dimension 32
+  hierarchical_l2g: 0.5396 ± nan at dimension 32
+
+Overall best: full_graph with 0.7472 ± nan at dimension 32

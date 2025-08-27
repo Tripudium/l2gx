@@ -1,6 +1,6 @@
 # Patched Embeddings Guide
 
-This guide provides a comprehensive overview of how to compute patched embeddings from graphs using the L2GX framework. It covers the complete workflow from graph loading to final embedding, with configuration options explained at each step.
+This guide provides an overview of how to compute patched embeddings from graphs using the L2GX framework. It covers the complete workflow from graph loading to final embedding, with configuration options explained at each step.
 
 ## Table of Contents
 
@@ -15,13 +15,7 @@ This guide provides a comprehensive overview of how to compute patched embedding
 
 ## Overview
 
-The patched embedding approach divides large graphs into overlapping subgraphs (patches), computes local embeddings for each patch, and then aligns them to create a global embedding. This divide-and-conquer strategy enables:
-
-- **Scalability**: Process graphs too large for single-machine memory
-- **Parallelization**: Embed patches independently in parallel
-- **Quality**: Preserve local structure while maintaining global coherence
-
-### Core Workflow
+The patched embedding approach divides large graphs into overlapping subgraphs (patches), computes local embeddings for each patch, and then aligns them to create a global embedding. 
 
 ```
 Graph → Patches → Local Embeddings → Alignment → Global Embedding

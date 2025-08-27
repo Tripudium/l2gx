@@ -1,0 +1,28 @@
+QUICK_TEST REPORT
+================================================================================
+
+Experiment Date: 2025-08-05 08:00:56
+Description: Quick validation test
+
+CONFIGURATION:
+  Dataset: Cora (2708 nodes, 7 classes)
+  Dimensions: [8, 16]
+  Runs per configuration: 1
+  Test size: 0.2
+
+METHODS:
+  full_graph: VGAE on full graph
+  geo_rademacher: Geo + Rademacher initialization test
+
+SUMMARY RESULTS:
+           method  embedding_dim  accuracy_mean  accuracy_std  accuracy_count  embedding_time_mean  embedding_time_std  total_time_mean  total_time_std
+0      full_graph              8         0.4188           NaN               1               0.1086                 NaN           0.1175             NaN
+1      full_graph             16         0.5037           NaN               1               0.0985                 NaN           0.1128             NaN
+2  geo_rademacher              8         0.3044           NaN               1               3.6407                 NaN           3.6446             NaN
+3  geo_rademacher             16         0.3321           NaN               1               0.2243                 NaN           0.2286             NaN
+
+BEST RESULTS BY METHOD:
+  full_graph: 0.5037 ± nan at dimension 16
+  geo_rademacher: 0.3321 ± nan at dimension 16
+
+Overall best: full_graph with 0.5037 ± nan at dimension 16

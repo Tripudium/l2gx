@@ -1,0 +1,53 @@
+config:
+  alignment:
+    method: l2g
+    randomized_method: randomized
+    scale: true
+    sketch_method: rademacher
+    verbose: true
+  dataset:
+    name: Cora
+    normalize_features: false
+  embedding:
+    embedding_dim: 128
+    epochs: 10000
+    hidden_dim_multiplier: 2
+    learning_rate: 0.001
+    method: vgae
+    patience: 20
+    verbose: false
+  experiment:
+    description: L2G alignment with VGAE base embeddings and randomized Rademacher
+      synchronization
+    name: L2G_VGAE_Rademacher_Experiment
+    output_dir: results/l2g_experiment
+  output:
+    format: npz
+    save_alignment_matrices: false
+    save_embeddings: true
+    save_patches: false
+  patches:
+    clustering_method: metis
+    hierarchical:
+      enabled: false
+      k_patches: 3
+      max_patch_size: 500
+      min_patch_size: 50
+    min_overlap: 256
+    num_patches: 10
+    sparsify_method: resistance
+    target_overlap: 512
+    target_patch_degree: 4
+    use_conductance_weighting: true
+    verbose: false
+dataset:
+  name: Cora
+  num_classes: 7
+  num_edges: 10556
+  num_features: 1433
+  num_nodes: 2708
+embedding_shape: !!python/tuple
+- 2708
+- 128
+embedding_type: patched
+num_patches: 10

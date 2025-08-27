@@ -26,8 +26,9 @@ from .methods import (
     SVDEmbedding,
     GraphSAGEEmbedding,
     DGIEmbedding,
+    PatchedEmbedding,
+    HierarchicalEmbedding,
 )
-from .patched_embedding import PatchedEmbedding
 
 # from .supervised_patch_embedding import SupervisedPatchedEmbedding  # Temporarily disabled
 from .train import train_gae
@@ -44,6 +45,7 @@ __all__ = [
     "GraphSAGEEmbedding",
     "DGIEmbedding",
     "PatchedEmbedding",
+    "HierarchicalEmbedding",
     # "SupervisedPatchedEmbedding",  # Temporarily disabled
     "get_embedding",
     "list_embeddings",

@@ -1,0 +1,73 @@
+# Minimal test configuration for validation
+experiment:
+  name: "Quick_Test"
+  description: "Quick validation test"
+  output_dir: "test_results"
+  
+dataset:
+  name: "Cora"
+
+parameters:
+  dimensions: [8, 16]  # Just 2 dimensions
+  n_runs: 1  # Single run
+  test_size: 0.2
+  random_seed: 42
+  
+classification:
+  classifier: "logistic_regression"
+  params:
+    max_iter: 1000
+    solver: "lbfgs"
+    random_state: 42
+  preprocessing:
+    scale_features: true
+
+methods:
+  full_graph:
+    enabled: true
+    description: "VGAE on full graph"
+    base_embedding:
+      method: "vgae"
+      epochs: 10  # Very few epochs for testing
+      learning_rate: 0.001
+      patience: 5
+      verbose: false
+  
+  geo_rademacher:
+    enabled: true
+    description: "Geo + Rademacher initialization test"
+    base_embedding:
+      method: "vgae"
+      epochs: 10
+      learning_rate: 0.001
+      patience: 5
+      verbose: false
+    patches:
+      num_patches: 4  # Small number of patches
+      clustering_method: "metis"
+      min_overlap: 64
+      target_overlap: 128
+      sparsify_method: "resistance"
+      target_patch_degree: 4
+      use_conductance_weighting: true
+    alignment:
+      method: "geo"
+      geo_method: "orthogonal"
+      num_epochs: 2
+      learning_rate: 0.01
+      use_scale: true
+      use_randomized_init: true
+      randomized_method: "randomized"
+      sketch_method: "rademacher"
+      verbose: false
+
+plotting:
+  save_formats: ["png"]
+  figure_size: [12, 8]
+  dpi: 150
+
+output:
+  save_raw_results: true
+  save_summary: true
+  save_plots: false
+  save_report: true

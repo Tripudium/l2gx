@@ -1,0 +1,60 @@
+CORA_5_METHODS_FINAL REPORT
+================================================================================
+
+Experiment Date: 2025-08-05 08:40:03
+Description: Classification accuracy vs embedding dimension comparison (5 methods, dims 4-128)
+
+CONFIGURATION:
+  Dataset: Cora (2708 nodes, 7 classes)
+  Dimensions: [4, 8, 16, 32, 64, 128]
+  Runs per configuration: 3
+  Test size: 0.2
+
+METHODS:
+  full_graph: VGAE applied to entire graph
+  l2g_rademacher: Patch-based VGAE with L2G Rademacher alignment
+  hierarchical_l2g: Binary tree hierarchical with Procrustes alignment
+  l2g_standard: Patch-based VGAE with standard L2G alignment (no randomization)
+  geo_rademacher: Patch-based VGAE with Geo alignment (2 epochs, randomized Rademacher init)
+
+SUMMARY RESULTS:
+              method  embedding_dim  accuracy_mean  accuracy_std  accuracy_count  embedding_time_mean  embedding_time_std  total_time_mean  total_time_std
+0         full_graph              4         0.4459        0.0326               3               0.7951              0.0376           0.8055          0.0356
+1         full_graph              8         0.6673        0.0546               3               0.8124              0.0059           0.8285          0.0072
+2         full_graph             16         0.7288        0.0352               3               0.9757              0.0091           0.9997          0.0108
+3         full_graph             32         0.8395        0.0193               3               1.3289              0.0145           1.3496          0.0152
+4         full_graph             64         0.8616        0.0067               3               1.9426              0.0221           1.9666          0.0229
+5         full_graph            128         0.8721        0.0138               3               3.7419              0.1291           3.7778          0.1265
+6     geo_rademacher              4         0.3444        0.0213               3               2.4686              0.3092           2.4735          0.3092
+7     geo_rademacher              8         0.4059        0.0240               3               2.7091              0.0243           2.7152          0.0242
+8     geo_rademacher             16         0.5947        0.0619               3               3.0790              0.0623           3.0872          0.0620
+9     geo_rademacher             32         0.6765        0.0522               3               4.3911              0.1115           4.4003          0.1114
+10    geo_rademacher             64         0.7189        0.0252               3               6.3523              0.3389           6.3640          0.3395
+11    geo_rademacher            128         0.7245        0.0038               3              11.6053              0.3959          11.6234          0.3957
+12  hierarchical_l2g              4         0.4520        0.0443               3               1.8369              0.0401           1.8427          0.0396
+13  hierarchical_l2g              8         0.6396        0.0237               3               2.3535              0.1041           2.3644          0.1024
+14  hierarchical_l2g             16         0.7097        0.0363               3               2.5593              0.0698           2.5711          0.0702
+15  hierarchical_l2g             32         0.7675        0.0227               3               3.3429              0.0285           3.3565          0.0290
+16  hierarchical_l2g             64         0.8124        0.0075               3               4.7737              0.1343           4.7926          0.1339
+17  hierarchical_l2g            128         0.8376        0.0115               3               8.0276              0.4977           8.0541          0.4990
+18    l2g_rademacher              4         0.3395        0.0103               3               3.3546              2.2056           3.3591          2.2053
+19    l2g_rademacher              8         0.4077        0.0224               3               2.2718              0.0936           2.2776          0.0932
+20    l2g_rademacher             16         0.5886        0.0128               3               2.7866              0.0591           2.7938          0.0591
+21    l2g_rademacher             32         0.6599        0.0600               3               3.3031              0.1535           3.3112          0.1541
+22    l2g_rademacher             64         0.7091        0.0102               3               5.0142              0.1863           5.0239          0.1868
+23    l2g_rademacher            128         0.7331        0.0175               3               9.7805              0.4760           9.7936          0.4758
+24      l2g_standard              4         0.3512        0.0141               3               2.3447              0.0871           2.3498          0.0874
+25      l2g_standard              8         0.4391        0.0248               3               2.5610              0.1749           2.5678          0.1748
+26      l2g_standard             16         0.5769        0.0155               3               2.7652              0.0024           2.7724          0.0023
+27      l2g_standard             32         0.6968        0.0087               3               3.6061              0.0683           3.6146          0.0685
+28      l2g_standard             64         0.7331        0.0102               3               6.0505              0.2812           6.0596          0.2817
+29      l2g_standard            128         0.7503        0.0170               3              11.8043              0.3511          11.8177          0.3510
+
+BEST RESULTS BY METHOD:
+  full_graph: 0.8721 ± 0.0138 at dimension 128
+  geo_rademacher: 0.7245 ± 0.0038 at dimension 128
+  hierarchical_l2g: 0.8376 ± 0.0115 at dimension 128
+  l2g_rademacher: 0.7331 ± 0.0175 at dimension 128
+  l2g_standard: 0.7503 ± 0.0170 at dimension 128
+
+Overall best: full_graph with 0.8721 ± 0.0138 at dimension 128

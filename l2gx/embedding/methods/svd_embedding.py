@@ -66,13 +66,14 @@ class SVDEmbedding(TransductiveGraphEmbedding):
         self._node_indices = None
 
     def fit(
-        self, graph: Union[Data, nx.Graph, sp.spmatrix, np.ndarray]
+        self, graph: Union[Data, nx.Graph, sp.spmatrix, np.ndarray], verbose: bool = False
     ) -> "SVDEmbedding":
         """
         Fit the SVD embedding to the graph.
 
         Args:
             graph: Input graph in supported format
+            verbose: Unused, SVD doesn't have verbose output
 
         Returns:
             self: Fitted embedding instance

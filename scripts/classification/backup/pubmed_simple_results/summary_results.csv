@@ -1,0 +1,7 @@
+method,embedding_dim,accuracy_mean,accuracy_std,accuracy_count,embedding_time_mean,embedding_time_std,total_time_mean,total_time_std
+full_graph,8,0.5345,,1,5.6427,,5.839,
+full_graph,16,0.6897,,1,6.8676,,7.1921,
+full_graph,32,0.7472,,1,9.2785,,9.8011,
+hierarchical_l2g,8,0.4724,,1,63.8807,,63.8999,
+hierarchical_l2g,16,0.4855,,1,82.9349,,82.9625,
+hierarchical_l2g,32,0.5396,,1,104.0127,,104.051,

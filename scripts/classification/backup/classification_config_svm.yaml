@@ -1,0 +1,27 @@
+# SVM Classification Configuration
+# Good for high-dimensional data and complex boundaries
+
+classifier:
+  type: "svm"
+  params:
+    kernel: "rbf"  # Radial basis function kernel
+    C: 1.0  # Regularization parameter
+    gamma: "scale"  # Kernel coefficient
+    probability: true  # Enable probability estimates
+    random_state: 42
+    max_iter: -1  # No iteration limit
+
+evaluation:
+  test_size: 0.2
+  val_size: 0.1
+  stratify: true
+  random_state: 42
+  
+  cross_validation:
+    enabled: false  # SVM can be slow with CV
+    folds: 3
+    scoring: "accuracy"
+
+preprocessing:
+  scale_features: true  # Very important for SVM!
+  handle_imbalanced: false

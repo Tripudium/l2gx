@@ -1,0 +1,61 @@
+# Simplified PubMed experiment for testing
+experiment:
+  name: "PubMed_Simple_Test"
+  description: "Simple PubMed test with reduced epochs"
+  output_dir: "pubmed_simple_results"
+  
+dataset:
+  name: "PubMed"
+
+parameters:
+  dimensions: [8, 16, 32]  # Fewer dimensions for faster testing
+  n_runs: 1  # Single run for speed
+  test_size: 0.2
+  random_seed: 42
+  
+classification:
+  classifier: "logistic_regression"
+  params:
+    max_iter: 1000
+    solver: "lbfgs"
+    random_state: 42
+  preprocessing:
+    scale_features: true
+
+methods:
+  full_graph:
+    enabled: true
+    description: "VGAE applied to entire graph"
+    base_embedding:
+      method: "vgae"
+      epochs: 50  # Reduced epochs
+      learning_rate: 0.001
+      patience: 10
+      verbose: false
+  
+  hierarchical_l2g:
+    enabled: true
+    description: "Binary tree hierarchical with Procrustes alignment"
+    base_embedding:
+      method: "vgae"
+      epochs: 50  # Reduced epochs
+      learning_rate: 0.001
+      patience: 10
+      verbose: false
+    hierarchical:
+      max_patch_size: 800
+      min_overlap: 64
+      target_overlap: 128
+
+plotting:
+  save_formats: ["pdf", "png"]
+  figure_size: [15, 12]
+  dpi: 300
+  style: "default"
+  colors: ["#1f77b4", "#2ca02c"]  # Just two colors
+  
+output:
+  save_raw_results: true
+  save_summary: true
+  save_plots: true
+  save_report: true

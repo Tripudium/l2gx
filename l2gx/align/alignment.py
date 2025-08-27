@@ -294,6 +294,11 @@ class AlignmentProblem:  # pylint: disable=too-many-instance-attributes
         scaling_mat = self._transform_matrix(
             lambda ov1, ov2: relative_scale(ov1, ov2, max_scale), 1
         )
+        
+        # Add diagnostics for debugging ARPACK issues
+        if self.verbose:
+            self._diagnose_scaling_matrix(scaling_mat)
+        
         vec = synchronise(scaling_mat, 1, symmetric=False, method="standard")
         vec = vec.flatten()
         vec = np.abs(vec)
@@ -302,6 +307,110 @@ class AlignmentProblem:  # pylint: disable=too-many-instance-attributes
             vec, a_min=1 / max_scale, a_max=max_scale, out=vec
         )  # avoid blow-up
         return vec
+
+    def _diagnose_scaling_matrix(self, scaling_mat):
+        """Diagnose scaling matrix properties to understand ARPACK failures."""
+        print("  Scaling matrix diagnostics:")
+        
+        # Convert to dense for analysis
+        if hasattr(scaling_mat, 'toarray'):
+            dense_mat = scaling_mat.toarray()
+        else:
+            dense_mat = scaling_mat
+            
+        # Basic properties
+        print(f"    Shape: {dense_mat.shape}")
+        print(f"    Sparsity: {(dense_mat == 0).sum() / dense_mat.size:.1%}")
+        
+        # Condition number
+        try:
+            cond_num = np.linalg.cond(dense_mat)
+            print(f"    Condition number: {cond_num:.2e}")
+            if cond_num > 1e12:
+                print("    ⚠️  EXTREMELY ill-conditioned!")
+            elif cond_num > 1e8:
+                print("    ⚠️  Poorly conditioned")
+        except:
+            print("    ❌ Could not compute condition number")
+        
+        # Eigenvalue analysis
+        try:
+            eigenvals = np.linalg.eigvals(dense_mat)
+            eigenvals = eigenvals[np.isfinite(eigenvals)]
+            if len(eigenvals) > 0:
+                min_eig, max_eig = np.min(np.abs(eigenvals)), np.max(np.abs(eigenvals))
+                print(f"    Eigenvalue range: [{min_eig:.2e}, {max_eig:.2e}]")
+                print(f"    Eigenvalue ratio: {max_eig/max(min_eig, 1e-16):.2e}")
+                
+                # Check for problematic eigenvalues
+                near_zero = np.sum(np.abs(eigenvals) < 1e-12)
+                very_large = np.sum(np.abs(eigenvals) > 1e8)
+                if near_zero > 0:
+                    print(f"    ⚠️  {near_zero} near-zero eigenvalues")
+                if very_large > 0:
+                    print(f"    ⚠️  {very_large} very large eigenvalues")
+        except Exception as e:
+            print(f"    ❌ Eigenvalue analysis failed: {e}")
+            
+        # Matrix entries analysis  
+        finite_entries = dense_mat[np.isfinite(dense_mat)]
+        if len(finite_entries) > 0:
+            print(f"    Entry range: [{np.min(finite_entries):.2e}, {np.max(finite_entries):.2e}]")
+            extreme_entries = np.sum((np.abs(finite_entries) > 1e6) | (np.abs(finite_entries) < 1e-6))
+            if extreme_entries > 0:
+                print(f"    ⚠️  {extreme_entries} extreme matrix entries")
+
+    def _diagnose_rotation_matrix(self, rots):
+        """Diagnose rotation matrix properties to understand ARPACK failures."""
+        print("  Rotation matrix diagnostics:")
+        
+        # Convert to dense for analysis
+        if hasattr(rots, 'toarray'):
+            dense_mat = rots.toarray()
+        else:
+            dense_mat = rots
+            
+        # Basic properties
+        print(f"    Shape: {dense_mat.shape}")
+        print(f"    Sparsity: {(dense_mat == 0).sum() / dense_mat.size:.1%}")
+        
+        # Condition number
+        try:
+            cond_num = np.linalg.cond(dense_mat)
+            print(f"    Condition number: {cond_num:.2e}")
+            if cond_num > 1e12:
+                print("    ⚠️  EXTREMELY ill-conditioned rotation matrix!")
+            elif cond_num > 1e8:
+                print("    ⚠️  Poorly conditioned rotation matrix")
+        except:
+            print("    ❌ Could not compute rotation matrix condition number")
+        
+        # Check for block structure issues
+        blocksize = self.dim
+        n_blocks = dense_mat.shape[0] // blocksize
+        print(f"    Block structure: {n_blocks} blocks of size {blocksize}x{blocksize}")
+        
+        # Analyze individual blocks
+        problematic_blocks = 0
+        for i in range(n_blocks):
+            for j in range(n_blocks):
+                block = dense_mat[i*blocksize:(i+1)*blocksize, j*blocksize:(j+1)*blocksize]
+                if np.any(np.isnan(block)) or np.any(np.isinf(block)):
+                    problematic_blocks += 1
+                elif np.linalg.norm(block) > 1e6:
+                    problematic_blocks += 1
+                    
+        if problematic_blocks > 0:
+            print(f"    ⚠️  {problematic_blocks} problematic rotation blocks")
+            
+        # Eigenvalue analysis for rotation matrix
+        try:
+            eigenvals = np.linalg.eigvals(dense_mat)
+            eigenvals = eigenvals[np.isfinite(eigenvals)]
+            if len(eigenvals) > 0:
+                print(f"    Rotation eigenvalue range: [{np.min(np.abs(eigenvals)):.2e}, {np.max(np.abs(eigenvals)):.2e}]")
+        except Exception as e:
+            print(f"    ❌ Rotation eigenvalue analysis failed: {e}")
 
     def translate_patches(self, translations=None):
         """align the patches by translation
@@ -378,6 +487,11 @@ class AlignmentProblem:  # pylint: disable=too-many-instance-attributes
         rots = self._transform_matrix(
             relative_orthogonal_transform, self.dim, symmetric_weights=True
         )
+        
+        # Add diagnostics for rotation matrix
+        if self.verbose:
+            self._diagnose_rotation_matrix(rots)
+        
         vecs = synchronise(
             rots,
             blocksize=self.dim,

@@ -1,0 +1,120 @@
+# Unified Framework Classification Experiment Configuration
+# Uses get_embedding("patched", ...) and get_embedding("hierarchical", ...) 
+
+# Experiment metadata
+experiment:
+  name: "Unified_Cora_Classification"
+  description: "Classification accuracy comparison using unified embedding framework"
+  output_dir: "unified_cora_results"
+  
+# Dataset configuration
+dataset:
+  name: "Cora"  # Options: Cora, PubMed, CiteSeer, etc.
+  # Optional dataset-specific parameters
+  # data_root: "/path/to/dataset"
+  # normalize_features: false
+
+# Experimental parameters
+parameters:
+  dimensions: [32, 64, 128]  # Embedding dimensions to test
+  n_runs: 3  # Number of independent runs per configuration
+  test_size: 0.2  # Fraction for test set
+  random_seed: 42
+  
+# Classification configuration
+classification:
+  classifier: "logistic_regression"
+  params:
+    max_iter: 1000
+    solver: "lbfgs"
+    random_state: 42
+  preprocessing:
+    scale_features: true
+
+# Embedding methods using unified framework
+methods:
+  full_graph:
+    enabled: true
+    description: "VGAE applied to entire graph"
+    base_embedding:
+      method: "vgae"
+      epochs: 100
+      learning_rate: 0.001
+      patience: 20
+      verbose: false
+  
+  patched_l2g_rademacher:
+    enabled: true
+    description: "Unified patched embedding with L2G Rademacher alignment"
+    base_embedding:
+      method: "vgae" 
+      epochs: 100
+      learning_rate: 0.001
+      patience: 20
+      verbose: false
+    patches:
+      num_patches: 10
+      clustering_method: "metis"
+      min_overlap: 256
+      target_overlap: 512
+      sparsify_method: "resistance"
+      target_patch_degree: 4
+    alignment:
+      method: "l2g"
+      randomized_method: "randomized"
+      sketch_method: "rademacher"
+  
+  patched_geo:
+    enabled: true
+    description: "Unified patched embedding with Geo alignment"
+    base_embedding:
+      method: "vgae"
+      epochs: 100
+      learning_rate: 0.001
+      patience: 20
+      verbose: false
+    patches:
+      num_patches: 10
+      clustering_method: "metis"
+      min_overlap: 256
+      target_overlap: 512
+      sparsify_method: "resistance"
+      target_patch_degree: 4
+    alignment:
+      method: "geo"
+      geo_method: "orthogonal"
+      num_epochs: 2
+      learning_rate: 0.01
+      use_scale: true
+      use_randomized_init: true
+      randomized_method: "randomized"
+      verbose: false
+  
+  hierarchical_unified:
+    enabled: true
+    description: "Unified hierarchical embedding with smart alignment selection"
+    base_embedding:
+      method: "vgae"
+      epochs: 100
+      learning_rate: 0.001
+      patience: 20
+      verbose: false
+    hierarchical:
+      max_patch_size: 800
+      min_overlap: 64
+      target_overlap: 128
+
+# Plotting configuration
+plotting:
+  save_formats: ["pdf", "png"]
+  figure_size: [15, 10]
+  dpi: 300
+  style: "default"
+  colors: ["#1f77b4", "#ff7f0e", "#2ca02c", "#d62728"]  # Blue, Orange, Green, Red
+  
+# Output configuration
+output:
+  save_raw_results: true
+  save_summary: true
+  save_plots: true
+  save_report: true

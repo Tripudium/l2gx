@@ -1,0 +1,145 @@
+# Dimension Sweep Classification Experiment Configuration
+# This file defines all parameters for running classification experiments
+# across different embedding dimensions and methods
+
+# Experiment metadata
+experiment:
+  name: "Cora_5_Methods_Final"
+  description: "Classification accuracy vs embedding dimension comparison (5 methods, dims 4-128)"
+  output_dir: "cora_final_results"
+  
+# Dataset configuration
+dataset:
+  name: "Cora"  # Options: Cora, PubMed, CiteSeer, etc.
+  # Optional dataset-specific parameters
+  # data_root: "/path/to/dataset"
+  # normalize_features: false
+
+# Experimental parameters
+parameters:
+  dimensions: [4, 8, 16, 32, 64, 128]  # Embedding dimensions to test
+  n_runs: 3  # Number of independent runs per configuration
+  test_size: 0.2  # Fraction for test set
+  random_seed: 42
+  
+# Classification configuration
+classification:
+  classifier: "logistic_regression"
+  params:
+    max_iter: 1000
+    solver: "lbfgs"
+    random_state: 42
+  preprocessing:
+    scale_features: true
+
+# Embedding methods to compare
+methods:
+  full_graph:
+    enabled: true
+    description: "VGAE applied to entire graph"
+    base_embedding:
+      method: "vgae"
+      epochs: 100
+      learning_rate: 0.001
+      patience: 20
+      verbose: false
+  
+  l2g_rademacher:
+    enabled: true
+    description: "Patch-based VGAE with L2G Rademacher alignment"
+    base_embedding:
+      method: "vgae" 
+      epochs: 100
+      learning_rate: 0.001
+      patience: 20
+      verbose: false
+    patches:
+      num_patches: 10
+      clustering_method: "metis"
+      min_overlap: 256
+      target_overlap: 512
+      sparsify_method: "resistance"
+      target_patch_degree: 4
+      use_conductance_weighting: true
+    alignment:
+      method: "l2g"
+      randomized_method: "randomized"
+      sketch_method: "rademacher"
+  
+  hierarchical_l2g:
+    enabled: true
+    description: "Binary tree hierarchical with Procrustes alignment"
+    base_embedding:
+      method: "vgae"
+      epochs: 100
+      learning_rate: 0.001
+      patience: 20
+      verbose: false
+    hierarchical:
+      max_patch_size: 800
+      min_overlap: 64
+      target_overlap: 128
+  
+  l2g_standard:
+    enabled: true
+    description: "Patch-based VGAE with standard L2G alignment (no randomization)"
+    base_embedding:
+      method: "vgae" 
+      epochs: 100
+      learning_rate: 0.001
+      patience: 20
+      verbose: false
+    patches:
+      num_patches: 10
+      clustering_method: "metis"
+      min_overlap: 256
+      target_overlap: 512
+      sparsify_method: "resistance"
+      target_patch_degree: 4
+      use_conductance_weighting: true
+    alignment:
+      method: "l2g"
+      # No randomized_method or sketch_method = standard L2G
+
+  geo_rademacher:
+    enabled: true
+    description: "Patch-based VGAE with Geo alignment (2 epochs, randomized Rademacher init)"
+    base_embedding:
+      method: "vgae"
+      epochs: 100
+      learning_rate: 0.001
+      patience: 20
+      verbose: false
+    patches:
+      num_patches: 10
+      clustering_method: "metis"
+      min_overlap: 256
+      target_overlap: 512
+      sparsify_method: "resistance"
+      target_patch_degree: 4
+      use_conductance_weighting: true
+    alignment:
+      method: "geo"
+      geo_method: "orthogonal"
+      num_epochs: 2
+      learning_rate: 0.01
+      use_scale: true
+      use_randomized_init: true
+      randomized_method: "randomized"
+      sketch_method: "rademacher"
+      verbose: true
+
+# Plotting configuration
+plotting:
+  save_formats: ["pdf", "png"]
+  figure_size: [15, 12]
+  dpi: 300
+  style: "default"
+  colors: ["#1f77b4", "#ff7f0e", "#2ca02c", "#d62728", "#9467bd"]  # Blue, Orange, Green, Red, Purple
+  
+# Output configuration
+output:
+  save_raw_results: true
+  save_summary: true
+  save_plots: true
+  save_report: true
