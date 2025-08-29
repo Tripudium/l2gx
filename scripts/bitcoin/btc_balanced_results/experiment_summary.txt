@@ -1,0 +1,29 @@
+
+EXPERIMENT SUMMARY
+============================================================
+Dataset: btc-reduced
+Methods tested: 3
+Dimensions tested: [np.int64(64), np.int64(128)]
+Sampling strategies: ['adasyn', 'borderline_smote', 'class_weight', 'none', 'ros', 'rus', 'smote', 'smote_enn', 'smote_tomek']
+Total runs: 162
+
+BEST CONFIGURATION
+============================================================
+Method: full_graph
+Dimension: 128
+Sampling: smote_tomek
+Balanced Accuracy: 0.4029 ± 0.0312
+F1 Macro: 0.2026 ± 0.0154
+
+TOP CONFIGURATIONS BY BALANCED ACCURACY
+============================================================
+full_graph           dim=128 smote_tomek    : 0.4029 bal_acc, 0.2026 f1
+full_graph           dim=128 ros            : 0.3968 bal_acc, 0.2009 f1
+full_graph           dim=128 smote_enn      : 0.3702 bal_acc, 0.1874 f1
+full_graph           dim=128 smote          : 0.3607 bal_acc, 0.1999 f1
+full_graph           dim= 64 adasyn         : 0.3593 bal_acc, 0.1810 f1
+full_graph           dim= 64 smote_enn      : 0.3588 bal_acc, 0.1907 f1
+full_graph           dim= 64 smote          : 0.3539 bal_acc, 0.1972 f1
+full_graph           dim= 64 smote_tomek    : 0.3493 bal_acc, 0.1914 f1
+full_graph           dim= 64 class_weight   : 0.3490 bal_acc, 0.2198 f1
+full_graph           dim=128 adasyn         : 0.3403 bal_acc, 0.1883 f1

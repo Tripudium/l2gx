@@ -1,0 +1,60 @@
+# Unified Patched L2G Embedding Configuration
+# Uses the new get_embedding("patched", ...) framework
+
+experiment:
+  name: "Unified_Patched_L2G"
+  description: "Patched embedding using unified get_embedding framework with L2G alignment"
+  output_dir: "results/unified_patched_l2g"
+
+# Dataset configuration
+dataset:
+  name: "Cora"
+  normalize_features: false
+
+# Unified patched embedding configuration
+patched:
+  # Core embedding parameters
+  embedding_dim: 128
+  base_method: "vgae"       # vgae, gae, svd, dgi, graphsage
+  
+  # Patching parameters
+  num_patches: 10           # Number of patches to create
+  clustering_method: "metis" # metis, fennel, louvain
+  min_overlap: 256
+  target_overlap: 512
+  sparsify_method: "resistance"  # resistance, rmst, none
+  target_patch_degree: 4
+  
+  # Base embedding parameters (for neural methods)
+  epochs: 200               
+  learning_rate: 0.001
+  hidden_dim: 256          
+  patience: 15
+  verbose: false
+
+# Aligner configuration (separate from patched config)
+aligner:
+  method: "l2g"
+  
+  # L2G specific parameters
+  randomized_method: "randomized"  # Use randomized L2G
+  sketch_method: "rademacher"      # Rademacher sketching
+  
+  # Advanced L2G parameters (optional)
+  # sketch_dimension: null    # Auto-determined
+  # regularization: 1e-6
+  # max_iterations: 1000
+  # tolerance: 1e-8
+
+# Output configuration
+output:
+  save_embeddings: true
+  save_patch_info: true       # Save patch structure information
+  save_timing: true           
+  format: "npz"
+
+# Evaluation configuration
+evaluation:
+  compute_alignment_errors: true   # Compute patch alignment quality
+  compute_embedding_quality: true  # Compute embedding statistics
+  save_visualizations: false

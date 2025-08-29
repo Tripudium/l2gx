@@ -1,0 +1,60 @@
+# Unified Patched Geo Embedding Configuration
+# Uses the new get_embedding("patched", ...) framework with Geo alignment
+
+experiment:
+  name: "Unified_Patched_Geo"
+  description: "Patched embedding using unified get_embedding framework with Geo alignment"
+  output_dir: "results/unified_patched_geo"
+
+# Dataset configuration
+dataset:
+  name: "Cora"
+  normalize_features: false
+
+# Unified patched embedding configuration
+patched:
+  # Core embedding parameters
+  embedding_dim: 128
+  base_method: "vgae"       # vgae, gae, svd, dgi, graphsage
+  
+  # Patching parameters
+  num_patches: 10           # Number of patches to create
+  clustering_method: "metis" # metis, fennel, louvain
+  min_overlap: 256          # Increased for better numerical stability
+  target_overlap: 512       # Increased for better numerical stability
+  sparsify_method: "resistance"  # resistance, rmst, none
+  target_patch_degree: 4
+  
+  # Base embedding parameters (for neural methods)
+  epochs: 200               
+  learning_rate: 0.001
+  hidden_dim: 256          
+  patience: 15
+  verbose: false
+
+# Geo Aligner configuration
+aligner:
+  method: "geo"
+  geo_method: "orthogonal"     # orthogonal, euclidean
+  use_scale: true              # Use scaling in alignment
+  num_epochs: 2                # Number of optimization epochs
+  learning_rate: 0.01          # Learning rate for optimization
+  verbose: false
+  
+  # Optional: Use randomized initialization
+  use_randomized_init: true
+  randomized_method: "randomized"
+  # Note: sketch_method not used in Geo aligner constructor
+
+# Output configuration
+output:
+  save_embeddings: true
+  save_patch_info: true       # Save patch structure information
+  save_timing: true           
+  format: "npz"
+
+# Evaluation configuration
+evaluation:
+  compute_alignment_errors: true   # Compute patch alignment quality
+  compute_embedding_quality: true  # Compute embedding statistics
+  save_visualizations: false

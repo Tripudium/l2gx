@@ -1,13 +1,14 @@
-from .registry import get_dataset, register_dataset, DATASET_REGISTRY
-from .base import BaseDataset
 from .as733 import AS733Dataset
-from .cora import CoraDataset
+from .base import BaseDataset
+from .btc import BTCDataset, BTCReducedDataset
 from .citeseer import CiteSeerDataset
-from .pubmed import PubMedDataset
+from .cora import CoraDataset
 from .dgraph import DGraphDataset
 from .elliptic import EllipticDataset
 from .mag240m import MAG240MDataset
 from .orbitaal import ORBITAALDataset
+from .pubmed import PubMedDataset
+from .registry import DATASET_REGISTRY, get_dataset, register_dataset
 
 
 def list_available_datasets():
@@ -75,6 +76,15 @@ def get_dataset_info():
             "features": "various",
             "type": "heterogeneous",
         },
+        "MAG240M-Enhanced": {
+            "description": "MAG240M with lazy loading and sampling",
+            "nodes": "Configurable (subset of 244M+)",
+            "edges": "Configurable (subset of 1.7B+)",
+            "features": "128 (paper embeddings)",
+            "classes": "Year-based",
+            "type": "heterogeneous",
+            "strategies": ["recent_papers", "random_papers", "field_papers", "temporal_window", "citation_subgraph"],
+        },
         "ORBITAAL": {
             "description": "Bitcoin temporal transaction graph",
             "nodes": "252M (sample: 1K)",
@@ -83,22 +93,41 @@ def get_dataset_info():
             "classes": "anomaly detection",
             "type": "temporal",
         },
+        "btc": {
+            "description": "Bitcoin transaction graph with entity classification",
+            "nodes": "252M",
+            "edges": "~1B",
+            "features": 8,
+            "classes": 12,
+            "type": "static",
+        },
+        "btc-reduced": {
+            "description": "Bitcoin transaction graph (labeled nodes only)",
+            "nodes": "~80K (0.03% of full dataset)",
+            "edges": "~10K (between labeled nodes)",
+            "features": 8,
+            "classes": 11,
+            "type": "static",
+        },
     }
 
 
 __all__ = [
-    "get_dataset",
-    "register_dataset",
     "DATASET_REGISTRY",
-    "BaseDataset",
     "AS733Dataset",
-    "CoraDataset",
+    "BTCDataset",
+    "BTCReducedDataset",
+    "BaseDataset",
     "CiteSeerDataset",
-    "PubMedDataset",
+    "CoraDataset",
     "DGraphDataset",
     "EllipticDataset",
+    "EnhancedMAG240MDataset",
     "MAG240MDataset",
     "ORBITAALDataset",
-    "list_available_datasets",
+    "PubMedDataset",
+    "get_dataset",
     "get_dataset_info",
+    "list_available_datasets",
+    "register_dataset",
 ]

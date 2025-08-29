@@ -1,0 +1,62 @@
+# Test Hierarchical on Both Cora and BTC-Reduced
+# Verifies hierarchical embedding works on both datasets
+
+experiment:
+  name: "Test_Hierarchical_Both"
+  description: "Test hierarchical on Cora and BTC-reduced"
+  output_dir: "test_hier_both_results"
+  
+# First test with Cora
+dataset:
+  name: "Cora"  # Change to "btc-reduced" for second test
+
+parameters:
+  dimensions: [32, 64]  # Two dimensions
+  n_runs: 2  # Two runs
+  test_size: 0.2
+  random_seed: 42
+  
+classification:
+  classifier: "logistic_regression"
+  params:
+    max_iter: 1000
+    solver: "lbfgs"
+    random_state: 42
+  preprocessing:
+    scale_features: true
+
+methods:
+  full_graph:
+    enabled: true
+    description: "Baseline: Full graph VGAE"
+    base_embedding:
+      method: "vgae"
+      epochs: 50
+      learning_rate: 0.001
+      patience: 20
+      verbose: false
+      
+  hierarchical_l2g:
+    enabled: true
+    description: "Hierarchical with L2G/Procrustes"
+    base_embedding:
+      method: "vgae"
+      epochs: 50
+      learning_rate: 0.001
+      patience: 20
+      verbose: false
+    hierarchical:
+      max_patch_size: 800
+      min_overlap: 64
+      target_overlap: 128
+
+plotting:
+  save_formats: ["png"]
+  figure_size: [10, 8]
+  dpi: 100
+  
+output:
+  save_raw_results: true
+  save_summary: true
+  save_plots: true
+  save_report: true

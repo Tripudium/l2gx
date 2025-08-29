@@ -1,0 +1,51 @@
+# Unified Hierarchical Embedding Configuration
+# Uses the new get_embedding("hierarchical", ...) framework
+
+experiment:
+  name: "Unified_Hierarchical"
+  description: "Hierarchical embedding using unified get_embedding framework"
+  output_dir: "results/unified_hierarchical"
+
+# Dataset configuration
+dataset:
+  name: "Cora"
+  normalize_features: false
+
+# Unified hierarchical embedding configuration
+hierarchical:
+  # Core embedding parameters
+  embedding_dim: 128
+  base_method: "vgae"       # vgae, gae, svd, dgi, graphsage
+  
+  # Hierarchical parameters
+  max_patch_size: 800       # Maximum nodes per patch in tree
+  min_overlap: 256          # Minimum overlap between patches (increased for stability)
+  target_overlap: 512       # Target overlap during expansion (increased for stability)
+  
+  # Base embedding parameters (for neural methods)
+  epochs: 200               
+  learning_rate: 0.001
+  hidden_dim: 256          
+  patience: 15
+  verbose: false
+
+# Aligner configuration (will be used intelligently by hierarchical embedder)
+# For binary trees: defaults to Procrustes
+# For multi-way trees: uses configured aligner
+aligner:
+  method: "l2g"             # Will be used for multi-way trees
+  randomized_method: "randomized"
+  sketch_method: "rademacher"
+
+# Output configuration
+output:
+  save_embeddings: true
+  save_patch_info: true       # Save patch structure information
+  save_timing: true           
+  format: "npz"
+
+# Evaluation configuration
+evaluation:
+  compute_alignment_errors: true   # Compute patch alignment quality
+  compute_embedding_quality: true  # Compute embedding statistics
+  save_visualizations: false

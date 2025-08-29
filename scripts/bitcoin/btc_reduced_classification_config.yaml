@@ -1,0 +1,165 @@
+# BTC-Reduced Node Classification Experiment Configuration
+# This file defines all parameters for running classification experiments
+# on the Bitcoin transaction graph (labeled nodes only) using entity type classification
+
+# Experiment metadata
+experiment:
+  name: "BTC_Reduced_Entity_Classification"
+  description: "Bitcoin entity type classification using graph embeddings (11 classes: BET, BRIDGE, EXCHANGE, FAUCET, INDIVIDUAL, MARKETPLACE, MINING, MIXER, PONZI, RANSOMWARE, OTHER)"
+  output_dir: "btc_reduced_classification_results"
+  
+# Dataset configuration
+dataset:
+  name: "btc-reduced"  # Bitcoin transaction graph with labeled nodes only
+  max_nodes: null  # Use all labeled nodes (~34K)
+  # Optional dataset-specific parameters
+  # data_root: "/path/to/dataset"
+  # normalize_features: false
+
+# Experimental parameters
+parameters:
+  dimensions: [8, 16, 32, 64, 128, 256]  # Embedding dimensions to test (start higher for financial data)
+  n_runs: 3  # Number of independent runs per configuration
+  test_size: 0.2  # Fraction for test set
+  random_seed: 42
+  
+# Classification configuration
+classification:
+  classifier: "logistic_regression"
+  params:
+    max_iter: 2000  # More iterations for 11-class problem
+    solver: "lbfgs"
+    random_state: 42
+    multi_class: "ovr"  # One-vs-rest for multi-class
+  preprocessing:
+    scale_features: true
+    # Handle class imbalance (INDIVIDUAL is 68% of data)
+    class_weight: "balanced"  
+
+# Embedding methods to compare
+methods:
+  full_graph:
+    enabled: true
+    description: "VGAE applied to entire BTC graph"
+    base_embedding:
+      method: "vgae"
+      epochs: 150  # More epochs for financial graph complexity
+      learning_rate: 0.001
+      patience: 25
+      verbose: false
+  
+  l2g_rademacher:
+    enabled: true
+    description: "Patch-based VGAE with L2G Rademacher alignment for BTC graph"
+    base_embedding:
+      method: "vgae" 
+      epochs: 150
+      learning_rate: 0.001
+      patience: 25
+      verbose: false
+    patches:
+      num_patches: 15  # Moderate patches for ~34K nodes (between Cora:10 and PubMed:20)
+      clustering_method: "metis"
+      min_overlap: 128  # Smaller overlaps for sparser Bitcoin graph
+      target_overlap: 256
+      sparsify_method: "resistance"
+      target_patch_degree: 3  # Lower degree for Bitcoin transaction sparsity
+      use_conductance_weighting: true
+    alignment:
+      method: "l2g"
+      randomized_method: "randomized"
+      sketch_method: "rademacher"
+  
+  hierarchical_l2g:
+    enabled: true
+    description: "Binary tree hierarchical with Procrustes alignment for BTC graph"
+    base_embedding:
+      method: "vgae"
+      epochs: 150
+      learning_rate: 0.001
+      patience: 25
+      verbose: false
+    hierarchical:
+      max_patch_size: 1200  # Slightly larger for ~34K nodes
+      min_overlap: 256  # Increased from 64 for sparse graph
+      target_overlap: 512  # Increased from 128 for better connectivity
+  
+  l2g_standard:
+    enabled: true
+    description: "Patch-based VGAE with standard L2G alignment (no randomization)"
+    base_embedding:
+      method: "vgae" 
+      epochs: 150
+      learning_rate: 0.001
+      patience: 25
+      verbose: false
+    patches:
+      num_patches: 15
+      clustering_method: "metis"
+      min_overlap: 128
+      target_overlap: 256
+      sparsify_method: "resistance"
+      target_patch_degree: 3
+      use_conductance_weighting: true
+    alignment:
+      method: "l2g"
+      # No randomized_method or sketch_method = standard L2G
+
+  geo_rademacher:
+    enabled: true
+    description: "Patch-based VGAE with Geo alignment (2 epochs, randomized Rademacher init)"
+    base_embedding:
+      method: "vgae"
+      epochs: 150
+      learning_rate: 0.001
+      patience: 25
+      verbose: false
+    patches:
+      num_patches: 15
+      clustering_method: "metis"
+      min_overlap: 128
+      target_overlap: 256
+      sparsify_method: "resistance"
+      target_patch_degree: 3
+      use_conductance_weighting: true
+    alignment:
+      method: "geo"
+      geo_method: "orthogonal"
+      num_epochs: 2
+      learning_rate: 0.01
+      use_scale: true
+      use_randomized_init: true
+      randomized_method: "randomized"
+      sketch_method: "rademacher"
+      verbose: true
+
+  # GraphSAGE removed - doesn't work well with sparse BTC graph
+  # The extreme sparsity (0.04% edge density) limits neighborhood aggregation methods
+
+# Plotting configuration
+plotting:
+  save_formats: ["pdf", "png"]
+  figure_size: [16, 12]
+  dpi: 300
+  style: "default"
+  colors: ["#1f77b4", "#ff7f0e", "#2ca02c", "#d62728", "#9467bd"]  # 5 colors for 5 methods
+  
+# Output configuration
+output:
+  save_raw_results: true
+  save_summary: true
+  save_plots: true
+  save_report: true
+
+# Bitcoin-specific evaluation metrics
+evaluation:
+  # Standard metrics
+  metrics: ["accuracy", "precision", "recall", "f1_score", "roc_auc"]
+  # Multi-class averaging
+  average_methods: ["macro", "weighted"]  # Important for imbalanced classes
+  # Confusion matrix
+  save_confusion_matrix: true
+  # Per-class results (important for Bitcoin entity types)
+  per_class_results: true
+  # Focus on high-value classes
+  priority_classes: ["EXCHANGE", "MIXER", "RANSOMWARE", "PONZI"]  # Financial crime detection focus

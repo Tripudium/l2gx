@@ -25,6 +25,7 @@ dependencies = [
     "datashader>=0.18.1",
     "geotorch",
     "ilupp == 1.0.*",
+    "imblearn>=0.0",
     "networkx>=2.0",
     "numba",
     "numpy",

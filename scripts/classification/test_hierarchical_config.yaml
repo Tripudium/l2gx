@@ -1,0 +1,52 @@
+# Test Configuration for Hierarchical Embedding
+# Minimal config to verify hierarchical embedding works in classification pipeline
+
+experiment:
+  name: "Test_Hierarchical"
+  description: "Test hierarchical embedding functionality"
+  output_dir: "test_hierarchical_results"
+  
+dataset:
+  name: "btc-reduced"
+  max_nodes: 1500  # Small for quick testing
+
+parameters:
+  dimensions: [32]  # Just one dimension for testing
+  n_runs: 1  # Single run
+  test_size: 0.2
+  random_seed: 42
+  
+classification:
+  classifier: "logistic_regression"
+  params:
+    max_iter: 1000
+    solver: "lbfgs"
+    random_state: 42
+  preprocessing:
+    scale_features: true
+
+methods:
+  hierarchical_l2g:
+    enabled: true
+    description: "Test hierarchical embedding"
+    base_embedding:
+      method: "vgae"
+      epochs: 20  # Quick test
+      learning_rate: 0.001
+      patience: 10
+      verbose: true  # Show progress
+    hierarchical:
+      max_patch_size: 800
+      min_overlap: 64
+      target_overlap: 128
+
+plotting:
+  save_formats: ["png"]
+  figure_size: [10, 8]
+  dpi: 100
+  
+output:
+  save_raw_results: true
+  save_summary: true
+  save_plots: false
+  save_report: false

@@ -34,6 +34,18 @@ from l2gx.patch.patches import (
     estimate_patch_parameters,
 )
 
+# Streaming patch functionality for large graphs
+try:
+    from l2gx.patch.streaming import (
+        StreamingPatchGenerator,
+        LazyPatch,
+        StreamingFENNEL,
+        load_streaming_patches,
+    )
+    _STREAMING_AVAILABLE = True
+except ImportError:
+    _STREAMING_AVAILABLE = False
+
 # Clustering algorithms
 from l2gx.patch.clustering import (
     hierarchical_clustering,
@@ -76,8 +88,7 @@ __all__ = [
     "create_patch_data",
     "create_patches",
     # High-level patch generation
-    "generate_patches",
-    "generate_patches_by_size",
+    "create_patches_by_size",
     "rolling_window_graph",
     "list_clustering_methods",
     "estimate_patch_parameters",
@@ -108,3 +119,12 @@ __all__ = [
     "nearest_orthogonal",
     "relative_scale",
 ]
+
+# Add streaming functionality if available
+if _STREAMING_AVAILABLE:
+    __all__.extend([
+        "StreamingPatchGenerator",
+        "LazyPatch", 
+        "StreamingFENNEL",
+        "load_streaming_patches",
+    ])
