@@ -10,6 +10,8 @@ from .gae_embedding import GAEEmbedding, VGAEEmbedding
 from .svd_embedding import SVDEmbedding
 from .graphsage_embedding import GraphSAGEEmbedding
 from .dgi_embedding import DGIEmbedding
+from .gin_embedding import GINEmbedding
+from .gat_embedding import GATEmbedding
 from .hierarchical_embedding import HierarchicalEmbedding
 from .patched_embedding import PatchedEmbedding
 
@@ -19,6 +21,8 @@ __all__ = [
     "SVDEmbedding",
     "GraphSAGEEmbedding",
     "DGIEmbedding",
+    "GINEmbedding",
+    "GATEmbedding",
     "HierarchicalEmbedding",
     "PatchedEmbedding",
 ]

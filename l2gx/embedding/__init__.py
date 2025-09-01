@@ -26,6 +26,7 @@ from .methods import (
     SVDEmbedding,
     GraphSAGEEmbedding,
     DGIEmbedding,
+    GINEmbedding,
     PatchedEmbedding,
     HierarchicalEmbedding,
 )
@@ -44,6 +45,7 @@ __all__ = [
     "SVDEmbedding",
     "GraphSAGEEmbedding",
     "DGIEmbedding",
+    "GINEmbedding",
     "PatchedEmbedding",
     "HierarchicalEmbedding",
     # "SupervisedPatchedEmbedding",  # Temporarily disabled
